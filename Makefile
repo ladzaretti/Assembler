@@ -12,7 +12,9 @@ OBJ= $(SRC:.c=.o)
 TARGET= assembler
 assembler: $(OBJ)
 	$(CC) $(LFLAGS) $^ -o $@
-assembler.o: assembler.c
+assembler.o: assembler.c parser.h
+	$(CC) $(CFLAGS) $< -o $@
+parser.o: parser.c
 	$(CC) $(CFLAGS) $< -o $@
 #delete executables and object files
 clean:
@@ -20,9 +22,11 @@ clean:
 	@echo Directory Cleaned
 #NOTE TO SELF: for bash/powershell, use "make clean" -> "make" when switching OS to avoid "cannot execute binary file" error.
 #run throught all of the input files.
-run:
+loop:
 	@echo ***running:
 	@for i in `seq 1 1` ; do \
 		echo "<input$$i.txt>output$$i.txt" ; \
 		./$(TARGET)<input$$i.txt>output$$i.txt ; \
 	done
+run:
+	./assembler File1.AS
