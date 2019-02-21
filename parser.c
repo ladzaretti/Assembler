@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "database.h"
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
 char *path_fname_extract(char *Fpath)
 {
@@ -149,11 +150,42 @@ char *get_cmd(char **src)
     return cmd; /*return cmd address to caller*/
 }
 
-void get_label_and_cmd(char **src, char **label, char **cmd)
+void get_data(char **src, data_t **node)
 {
+    char *cmd = NULL;
+    *node = (data_t *)calloc(1, sizeof(data_t));
+    if (!node)
+    {
+        printf("allocation failed.\n");
+        return;
+    }
     if (strchr(*src, ':'))
-        *label = get_cmd(src);
-    *cmd = get_cmd(src);
+    {
+        char *label = get_cmd(src);
+        (*node)->label = (char *)malloc(strlen(label) + 1);
+        if (!(*node)->label)
+        {
+            printf("allocation failed.\n");
+            return;
+        }
+        strcpy((*node)->label, label);
+        free(label);
+    }
+    cmd = get_cmd(src);
+    (*node)->cmd = (char *)malloc(strlen(cmd) + 1);
+    if (!(*node)->cmd)
+    {
+        printf("allocation failed.\n");
+        return;
+    }
+    strcpy((*node)->cmd, cmd);
+    free(cmd);
     remove_wspaces(src);
-    printf("%d\n", strlen(*src));
+    (*node)->arg = (char *)malloc(strlen(*src) + 1);
+    if (!(*node)->arg)
+    {
+        printf("allocation failed.\n");
+        return;
+    }
+    strcpy((*node)->arg, *src);
 }

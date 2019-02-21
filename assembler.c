@@ -5,15 +5,12 @@
 int main(int argc, char **argv)
 {
     char *path_name = NULL; /*string to contain path filename*/
-    char *line = NULL;
-    char *label = NULL;
-    char *cmd = NULL;
+    char *line = NULL;      /*string for a line from AS file*/
     list_t list;
     while (*++argv)
     {
         FILE *fp;
         fpos_t start; /*start of file keeper*/
-        int ch;
         /*first file scan*/
         if (!(fp = fopen(*argv, "r")))
             printf("\n%s file does not exists.", *argv);
@@ -23,25 +20,17 @@ int main(int argc, char **argv)
             while (!feof(fp))
             {
                 char *temp = NULL;
+                data_t *nde = NULL;
+                node_t elm;
                 line = NULL;
-                cmd = NULL;
-                label = NULL;
                 fget_line(&line, fp);
-                printf("%s\n", line);
                 temp = line;
-                get_label_and_cmd(&line, &label, &cmd);
-                puts(line);
-                if (label)
-                {
-                    printf("%s\n", label);
-                    free(label);
-                }
-                if (cmd)
-                {
-                    printf("%s\n", cmd);
-                    free(cmd);
-                }
+                printf("<%s>\n", line);
+                get_data(&line, &nde);
+                elm.data = nde;
+                print_data(elm.data, DATA_T);
                 free(temp);
+                free_data(&elm.data, DATA_T);
             }
             fclose(fp);
         }
