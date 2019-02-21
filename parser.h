@@ -18,5 +18,9 @@ int fget_line(char **, FILE *);
 the function returns pointer to the extracted first word in the given pointer to string.
 if the given data contains no data, an empty string will be returned ("/n")*/
 char *get_nxt_word(char **);
+/*the following function gets a given string (line from given file), and stores its componenets in the 
+coresponding field in the data structure object.
+the first word is checked, if the last char of the word is ':" then the word stored as a label,otherwise as a cmd.
+the rest of the line, if there is any is stored as the cmd arguments.*/
 data_t *get_data(char **);
 #endif

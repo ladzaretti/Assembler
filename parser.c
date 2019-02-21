@@ -179,32 +179,32 @@ data_t *get_data(char **src)
             printf("allocation failed.\n");
             return NULL;
         }
-        strncpy(node->label, cmd, strlen(cmd)); /*copy the label into the data obj without the colon.*/
+        strncpy(node->label, cmd, strlen(cmd)); /*copy the label into the data obj without the null terminator.*/
         (node->label)[strlen(cmd) - 1] = 0;     /*terminate at colon.*/
         free(cmd);                              /*free allocated space from utility function get_nxt_word.*/
         cmd = get_nxt_word(src);                /*get the next word.*/
     }
-    if (cmd)
+    if (cmd) /*if there is an unattended word*/
     {
-        node->cmd = (char *)malloc(strlen(cmd) + 1);
+        node->cmd = (char *)malloc(strlen(cmd) + 1); /*allocate space to store as cmd.*/
         if (!node->cmd)
         {
             printf("allocation failed.\n");
             return NULL;
         }
-        strcpy(node->cmd, cmd);
-        free(cmd);
+        strcpy(node->cmd, cmd); /*copy to data_t*/
+        free(cmd);              /*free cmd.*/
     }
-    remove_wspaces(src);
-    if (strlen(*src))
+    remove_wspaces(src); /*strip white spaces from the reminder.*/
+    if (strlen(*src))    /*if the reminder (=arguments) is non empty.*/
     {
-        node->arg = (char *)malloc(strlen(*src) + 1);
+        node->arg = (char *)malloc(strlen(*src) + 1); /*allocate arg field*/
         if (!node->arg)
         {
             printf("allocation failed.\n");
             return NULL;
         }
-        strcpy(node->arg, *src);
+        strcpy(node->arg, *src); /*store arguments.*/
     }
     return node;
 }
