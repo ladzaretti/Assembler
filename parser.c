@@ -67,7 +67,7 @@ char *get_label(char **str)
         return label;
     }
 }
-/*get input dynamically from stdio stream(keyboard/redirection).
+/*get input dynamically from stream3
 function arguments: pointer to an array of char (string)
 return values:
 1 - finished successfully
@@ -105,10 +105,10 @@ int fget_line(char **str, FILE *stream)
         return EOF;
     return 1; /*there is still date in stdio but got one line, return 1.*/
 }
-/*the following function receives a pointer to an array of char (string) as arguments.
-the function returns pointer to the extracted first word in the given pointer to string.
+/*the following function receives a pointer to a string as argument.
+the function returns pointer to the extracted first word in the given string.
 if the given data contains no data, an empty string will be returned ("/n")*/
-char *get_cmd(char **src)
+char *get_nxt_word(char **src)
 {
     char *temp = NULL, *cmd = NULL;                               /*temp will be used to get the allocated address. cmd will be returned from the function.*/
     int i = 1;                                                    /*counts all chars in the given string argument.*/
@@ -116,7 +116,10 @@ char *get_cmd(char **src)
     while ((*(*src + i - 1) == ' ') || (*(*src + i - 1) == '\t')) /*skip pass all starting white spaces.*/
         i++;
     if (strlen(*src) == i - 1) /*check if the entire string contains white spaces.*/
-        puts("Empty line.");
+    {
+        /* puts("Empty line.");*/
+        return NULL;
+    }
     /*the following loop will dynamically copy the first sequence of characters until reaching space, comma or null.*/
     while ((*(*src + i - 1) != ' ') && (*(*src + i - 1) != 0) && (*(*src + i - 1) != ','))
     {
@@ -134,6 +137,8 @@ char *get_cmd(char **src)
         }
         i++; /*increase data char counter.*/
     }
+    if (j == 1) /*if no char was copied.*/
+        return NULL;
     temp = (char *)realloc(cmd, sizeof(char) * j); /*terminate cmd with null.*/
     if (temp == NULL)
     {
@@ -148,44 +153,58 @@ char *get_cmd(char **src)
     }
     return cmd; /*return cmd address to caller*/
 }
+/*the following function gets a given string (line from given file), and stores its componenets in the 
+coresponding field in the data structure object.
+the first word is checked, if the last char of the word is ':" then the word stored as a label,otherwise as a cmd.
+the rest of the line, if there is any is stored as the cmd arguments.*/
 data_t *get_data(char **src)
 {
-    char *cmd = NULL;
-    data_t *node = (data_t *)calloc(1, sizeof(data_t));
+    char *cmd = get_nxt_word(src);                      /*get first word.*/
+    data_t *node = (data_t *)calloc(1, sizeof(data_t)); /*allocate new data obj.*/
+    if (!cmd)                                           /*check if the line is empty, if so return NULL and free node.*/
+    {
+        free(node);
+        return NULL;
+    }
     if (!node)
     {
         printf("allocation failed.\n");
         return NULL;
     }
-    if (strchr(*src, ':'))
+    if (cmd[strlen(cmd) - 1] == ':') /*check of the first word is a label.*/
     {
-        char *label = get_cmd(src);
-        node->label = (char *)malloc(strlen(label));
+        node->label = (char *)malloc(strlen(cmd)); /*allocate space in data obj for the given label.*/
         if (!node->label)
         {
             printf("allocation failed.\n");
             return NULL;
         }
-        strncpy(node->label, label, strlen(label));
-        (node->label)[strlen(label) - 1] = 0;
-        free(label);
+        strncpy(node->label, cmd, strlen(cmd)); /*copy the label into the data obj without the colon.*/
+        (node->label)[strlen(cmd) - 1] = 0;     /*terminate at colon.*/
+        free(cmd);                              /*free allocated space from utility function get_nxt_word.*/
+        cmd = get_nxt_word(src);                /*get the next word.*/
     }
-    cmd = get_cmd(src);
-    node->cmd = (char *)malloc(strlen(cmd) + 1);
-    if (!node->cmd)
+    if (cmd)
     {
-        printf("allocation failed.\n");
-        return NULL;
+        node->cmd = (char *)malloc(strlen(cmd) + 1);
+        if (!node->cmd)
+        {
+            printf("allocation failed.\n");
+            return NULL;
+        }
+        strcpy(node->cmd, cmd);
+        free(cmd);
     }
-    strcpy(node->cmd, cmd);
-    free(cmd);
     remove_wspaces(src);
-    node->arg = (char *)malloc(strlen(*src) + 1);
-    if (!node->arg)
+    if (strlen(*src))
     {
-        printf("allocation failed.\n");
-        return NULL;
+        node->arg = (char *)malloc(strlen(*src) + 1);
+        if (!node->arg)
+        {
+            printf("allocation failed.\n");
+            return NULL;
+        }
+        strcpy(node->arg, *src);
     }
-    strcpy(node->arg, *src);
     return node;
 }
