@@ -51,3 +51,38 @@ void free_data(void **node, int type)
         break;
     }
 }
+static void dt_enqueue(list_t list, data_t *data)
+{
+    node_t *nnode = (node_t *)malloc(sizeof(node_t));
+    nnode->data = data;
+    if (!nnode)
+    {
+        puts("allocation failed");
+        return;
+    }
+    if (!list.head)
+    {
+        list.head = nnode;
+        list.tail = nnode;
+        return;
+    }
+    list.head->next = nnode;
+    nnode->next = NULL;
+    return;
+}
+void list_enqueue(list_t list, void *data, int type)
+{
+
+    switch (type)
+    {
+    case (DATA_T):
+    {
+        void (*fp_dt_enq)(list_t, data_t *) = &dt_enqueue;
+        data_t *p = (data_t *)data;
+        (*fp_dt_enq)(list,p);
+    }
+    break;
+    default:
+        break;
+    }
+}

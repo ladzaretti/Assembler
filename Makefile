@@ -3,7 +3,7 @@ CC=gcc
 #compiling flags
 CFLAGS=-g -c -Wall -ansi -std=c90 -pedantic
 #linking flags
-LFLAGS=-g -Wall -ansi -std=c90
+LFLAGS=-g -Wall -ansi -std=c90 -pedantic
 #lists all c source file names
 SRC= $(wildcard *.c)
 #create object file list from src list
@@ -12,9 +12,11 @@ OBJ= $(SRC:.c=.o)
 TARGET= assembler
 assembler: $(OBJ)
 	$(CC) $(LFLAGS) $^ -o $@
-assembler.o: assembler.c parser.h
+assembler.o: assembler.c parser.h database.h
 	$(CC) $(CFLAGS) $< -o $@
-parser.o: parser.c
+parser.o: parser.c database.h
+	$(CC) $(CFLAGS) $< -o $@
+database.o: database.c database.h
 	$(CC) $(CFLAGS) $< -o $@
 #delete executables and object files
 clean:

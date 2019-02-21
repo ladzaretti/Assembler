@@ -150,42 +150,43 @@ char *get_cmd(char **src)
     return cmd; /*return cmd address to caller*/
 }
 
-void get_data(char **src, data_t **node)
+data_t *get_data(char **src)
 {
     char *cmd = NULL;
-    *node = (data_t *)calloc(1, sizeof(data_t));
+    data_t *node = (data_t *)calloc(1, sizeof(data_t));
     if (!node)
     {
         printf("allocation failed.\n");
-        return;
+        return NULL;
     }
     if (strchr(*src, ':'))
     {
         char *label = get_cmd(src);
-        (*node)->label = (char *)malloc(strlen(label) + 1);
-        if (!(*node)->label)
+        node->label = (char *)malloc(strlen(label) + 1);
+        if (!node->label)
         {
             printf("allocation failed.\n");
-            return;
+            return NULL;
         }
-        strcpy((*node)->label, label);
+        strcpy(node->label, label);
         free(label);
     }
     cmd = get_cmd(src);
-    (*node)->cmd = (char *)malloc(strlen(cmd) + 1);
-    if (!(*node)->cmd)
+    node->cmd = (char *)malloc(strlen(cmd) + 1);
+    if (!node->cmd)
     {
         printf("allocation failed.\n");
-        return;
+        return NULL;
     }
-    strcpy((*node)->cmd, cmd);
+    strcpy(node->cmd, cmd);
     free(cmd);
     remove_wspaces(src);
-    (*node)->arg = (char *)malloc(strlen(*src) + 1);
-    if (!(*node)->arg)
+    node->arg = (char *)malloc(strlen(*src) + 1);
+    if (!node->arg)
     {
         printf("allocation failed.\n");
-        return;
+        return NULL;
     }
-    strcpy((*node)->arg, *src);
+    strcpy(node->arg, *src);
+    return node;
 }

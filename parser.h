@@ -18,5 +18,5 @@ int fget_line(char **, FILE *);
 the function returns pointer to the extracted first word in the given pointer to string.
 if the given data contains no data, an empty string will be returned ("/n")*/
 char *get_cmd(char **);
-void get_data(char **, data_t **);
+data_t *get_data(char **);
 #endif

@@ -20,14 +20,12 @@ int main(int argc, char **argv)
             while (!feof(fp))
             {
                 char *temp = NULL;
-                data_t *nde = NULL;
                 node_t elm;
                 line = NULL;
                 fget_line(&line, fp);
                 temp = line;
                 printf("<%s>\n", line);
-                get_data(&line, &nde);
-                elm.data = nde;
+                elm.data = get_data(&line);
                 print_data(elm.data, DATA_T);
                 free(temp);
                 free_data(&elm.data, DATA_T);
