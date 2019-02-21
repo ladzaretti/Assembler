@@ -67,7 +67,6 @@ char *get_label(char **str)
         return label;
     }
 }
-
 /*get input dynamically from stdio stream(keyboard/redirection).
 function arguments: pointer to an array of char (string)
 return values:
@@ -149,7 +148,6 @@ char *get_cmd(char **src)
     }
     return cmd; /*return cmd address to caller*/
 }
-
 data_t *get_data(char **src)
 {
     char *cmd = NULL;
@@ -162,13 +160,14 @@ data_t *get_data(char **src)
     if (strchr(*src, ':'))
     {
         char *label = get_cmd(src);
-        node->label = (char *)malloc(strlen(label) + 1);
+        node->label = (char *)malloc(strlen(label));
         if (!node->label)
         {
             printf("allocation failed.\n");
             return NULL;
         }
-        strcpy(node->label, label);
+        strncpy(node->label, label, strlen(label));
+        (node->label)[strlen(label) - 1] = 0;
         free(label);
     }
     cmd = get_cmd(src);

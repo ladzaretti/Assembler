@@ -24,7 +24,7 @@ typedef struct list
     ptr head;
     ptr tail;
 } list_t;
-void print_data(void *, int);
-void free_data(void **, int);
-void list_enqueue(list_t, void *, int);
+void list_print(list_t, int);
+void list_free(list_t *, int);
+void list_enqueue(list_t *, void *, int);
 #endif

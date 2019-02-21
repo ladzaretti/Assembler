@@ -7,6 +7,8 @@ int main(int argc, char **argv)
     char *path_name = NULL; /*string to contain path filename*/
     char *line = NULL;      /*string for a line from AS file*/
     list_t list;
+    list.head = NULL;
+    list.tail = NULL;
     while (*++argv)
     {
         FILE *fp;
@@ -20,16 +22,15 @@ int main(int argc, char **argv)
             while (!feof(fp))
             {
                 char *temp = NULL;
-                node_t elm;
                 line = NULL;
                 fget_line(&line, fp);
                 temp = line;
                 printf("<%s>\n", line);
-                elm.data = get_data(&line);
-                print_data(elm.data, DATA_T);
+                list_enqueue(&list, (void *)get_data(&line), DATA_T);
                 free(temp);
-                free_data(&elm.data, DATA_T);
             }
+            list_print(list, DATA_T);
+            list_free(&list, DATA_T);
             fclose(fp);
         }
     }
