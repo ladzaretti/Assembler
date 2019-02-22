@@ -12,7 +12,8 @@ typedef struct data
 {
     char *label;
     char *cmd;
-    char *arg;
+    char **arg;
+    int narg;
 } data_t;
 /*generic double linked list, data fiels is changable.*/
 typedef struct node *ptr;

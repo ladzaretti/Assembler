@@ -1,4 +1,13 @@
 #include "database.h"
+/*following function frees an dynamically allocated array of strings.
+arguments are pointer to an array of strings, and size of the array (number of strings stored).*/
+static void free_CSV_arg(char ***arg_mat, int arg_num)
+{
+    int i = 0;
+    for (; i < arg_num; i++)
+        free(*(*arg_mat + i)); /*free dynamically allocated strings inside the matrix*/
+    free(*arg_mat);            /*free string array, dynamically allocated in line 134*/
+}
 /*the following function receives a address of a data_t node, then frees its allocated fields. and finally frees the node itself.*/
 static void free_dt(void **node)
 {
@@ -7,8 +16,8 @@ static void free_dt(void **node)
         free((*p)->label); /*free field.*/
     if ((*p)->cmd)
         free((*p)->cmd);
-    if ((*p)->arg)
-        free((*p)->arg);
+    if (((*p)->narg) > 0)
+        free_CSV_arg(&((*p)->arg), (*p)->narg);
     free(*p);
 }
 /*free data node by its type. the function recives the address of a node by a void ptr, and its type as enum.
@@ -35,13 +44,19 @@ void list_free(list_t *list, int type)
 static void print_dt(void *node)
 {
     data_t *p = (data_t *)node;
-    puts("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+    puts("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
     if ((*p).label)
         printf("label =<%s>\n", (*p).label);
     if ((*p).cmd)
         printf("cmd  =<%s>\n", (*p).cmd);
-    if ((*p).arg)
-        printf("arg =<%s>\n", (*p).arg);
+    if (((*p).narg) > 0)
+    {
+        int i = 0;
+        printf("#arg = %d\n", (*p).narg);
+        for (; i < (*p).narg; i++)
+            printf("<%s>", *(p->arg + i));
+        printf("\n");
+    }
     puts("__________________________________");
 }
 /*the following function prints the given generic node, the type of the node is passed as an enum entry.*/
@@ -146,7 +161,7 @@ void list_enqueue(list_t *list, void *data, int type)
     {
     case (DATA_T): /*deal with data_t type.*/
     {
-        void (*fp_dt_enq)(list_t *, data_t *) = &dt_enqueue; /*pointer to enqueue function.*/
+        void (*fp_dt_enq)(list_t *, data_t *) = &dt_enqueue; /*pointer to the enqueue function.*/
         data_t *p = (data_t *)data;                          /*cast by pointer to data_t **/
         (*fp_dt_enq)(list, p);                               /*enqueue to list.*/
     }

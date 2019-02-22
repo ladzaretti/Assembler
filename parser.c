@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "database.h"
+#include "parser.h"
+#define COMMA "," /*comma macro for future use with strtok: geting arguments tokens*/
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
 char *path_fname_extract(char *Fpath)
 {
@@ -153,6 +156,70 @@ char *get_nxt_word(char **src)
     }
     return cmd; /*return cmd address to caller*/
 }
+/*the following function receives a string as argument, then it searches for a sequence of (digit+alpha)^+(space+tab)^+(digit+alpha) (regex)
+if found one, the function returns true, otherwise false.*/
+int check_missing_comma(char *str)
+{
+    int i = 0, dig_alpha_seq = 0, wspace_seq = 0;
+    for (; i < strlen(str); i++) /*cycle thought given string*/
+    {
+        if ((isalpha(*(str + i))) || (isdigit(*(str + i))))                                 /*search for (digit+alpha)^+*/
+            dig_alpha_seq = 1;                                                              /*if so, then flag == true*/
+        else if ((!isalpha(*(str + i))) && (*(str + i) != ' ') && (!(isdigit(*(str + i))))) /* if next char isnt alpha/space/digit -> reset*/
+            dig_alpha_seq = wspace_seq = 0;
+        if ((*(str + i) == ' ') && (dig_alpha_seq)) /*if current char is space and previous seq is (digit+alpha)^+ than wspace flag is true*/
+            wspace_seq = 1;
+        /*if previous seq is (digit+alpha)^+(space+tab)^+ and current char is (digit+alpha) than the desired seq is found -> return true*/
+        if ((dig_alpha_seq) && (wspace_seq) && ((isalpha(*(str + i))) || (isdigit(*(str + i)))))
+            return 1;
+    }
+    /*didnt find seq*/
+    return 0;
+}
+/*the following function receives the raw string containing the arguments got from the user.
+the data is analyzed. if the raw string contains no errors (of 5 types listed below) a array of strings is returned.
+in which the array elements are the arguments in chronological order (by index) as received from the user.
+the function's arguments are pointer to the raw data string, pointer to an empty char matrix.
+the function returns an error code if encountered any, otherwise stores the arguments in a dynamically allocated array of strings and returns the number of arguments extracted.*/
+int get_CSV_arg(char **data, char ***arg_mat)
+/*return values:    -1 = Illegal comma
+                    -2 = Multiple consecutive commas
+                    -3 = Extraneous text after end of command (comma specific)
+                    -4 = allocation failed
+                    -5 = missing comma between parameters*/
+{
+    char *token = NULL; /**/
+    char **temp = NULL;
+    int i = 0;                      /*arguments counter*/
+    if (check_missing_comma(*data)) /*check for missing comma.*/
+        return -5;
+    remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
+    if (**data == ',')                            /* check if the first char in the striped string is a comma*/
+        return -1;                                /*return proper error code*/
+    else if (strstr(*data, ",,"))                 /*search for consecutive of commas*/
+        return -2;                                /*if found, return proper code*/
+    else if (*(*data + strlen(*data) - 1) == ',') /*check if the last digit is a comma*/
+        return -3;                                /*return error code*/
+    token = strtok(*data, COMMA);                 /*get first token*/
+    while (token != NULL)
+    {
+        i++;
+        temp = (char **)realloc(*arg_mat, sizeof(char *) * i); /*reallocate new block of memory for a pointer to a string*/
+        if (temp == NULL)                                      /*check if allocation was successful*/
+        {
+            printf("Allocation Failed\n");
+            return -4; /*return error if allocation failed*/
+        }
+        else
+        {
+            *arg_mat = temp;                                         /*give memory block back if allocation was successful*/
+            *(*arg_mat + i - 1) = (char *)malloc(strlen(token) + 1); /*allocate new space for saving token*/
+            strcpy(*(*arg_mat + i - 1), token);                      /*copy token to newly allocated memory space*/
+        }
+        token = strtok(NULL, COMMA); /*find next token*/
+    }
+    return i; /*return number of arguments received*/
+}
 /*the following function gets a given string (line from given file), and stores its componenets in the 
 coresponding field in the data structure object.
 the first word is checked, if the last char of the word is ':" then the word stored as a label,otherwise as a cmd.
@@ -198,13 +265,7 @@ data_t *get_data(char **src)
     remove_wspaces(src); /*strip white spaces from the reminder.*/
     if (strlen(*src))    /*if the reminder (=arguments) is non empty.*/
     {
-        node->arg = (char *)malloc(strlen(*src) + 1); /*allocate arg field*/
-        if (!node->arg)
-        {
-            printf("allocation failed.\n");
-            return NULL;
-        }
-        strcpy(node->arg, *src); /*store arguments.*/
+        node->narg = get_CSV_arg(src, &(node->arg));
     }
     return node;
 }

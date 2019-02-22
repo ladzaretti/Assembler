@@ -14,7 +14,7 @@ assembler: $(OBJ)
 	$(CC) $(LFLAGS) $^ -o $@
 assembler.o: assembler.c parser.h database.h
 	$(CC) $(CFLAGS) $< -o $@
-parser.o: parser.c database.h
+parser.o: parser.c parser.h database.h
 	$(CC) $(CFLAGS) $< -o $@
 database.o: database.c database.h
 	$(CC) $(CFLAGS) $< -o $@
