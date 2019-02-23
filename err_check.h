@@ -18,4 +18,12 @@ int ins_identify(char *ins);
 void label_check(char *label);
 /*input - data_t node, the fucntion displays warnings in case of: node has label only or extern/enrty as a label.*/
 int ignore_label(data_t node);
+/*the following function classifys the given line to its type.
+input the first word (non label) of a line.
+returns:
+0 - invalid line
+1 - command line
+2 - insturction line
+*/
+int identify_line_type(char *cmd);
 #endif

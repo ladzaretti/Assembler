@@ -6,6 +6,8 @@ extern const char cmd_string[16][5];
 extern const char ins_string[4][8];
 extern int linec; /*read line counter.*/
 extern int err;   /*global error flag*/
+extern int IC;
+extern int DC;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
 each record is define explicidly to avoid jumps in value.*/
 typedef enum

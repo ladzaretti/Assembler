@@ -54,13 +54,14 @@ int is_cmd(char *cmd)
         return id;     /*return id.*/
     if (cmd[0] != '.') /*if strcmp didnt succeed and first char is not a dot. the supposed cmd is invalid.*/
     {
-        printf("error: undefined command name [line %d]\n", linec);
+        printf("error: <%s> - undefined command name [line %d]\n", cmd, linec);
         err = 1;
     }
     return -1; /* isnt cmd, or not supported cmd.*/
 }
 /*this function takes a string as arguments and compares it to a list of values (strings) in ins_string.
-the index of every such string is according to its ID as defined in the enum ins list in database header.*/
+the index of every such string is according to its ID as defined in the enum ins list in database header.
+returns the id or -1 if not supported.*/
 int ins_identify(char *ins)
 {
     int i = 0;                                                          /*counter used in the for loop.*/
@@ -72,10 +73,25 @@ int ins_identify(char *ins)
     }
     if (ins[0] == '.') /*if strcmp didnt succeed and first char is a dot.the supposed ins is invalid.*/
     {
-        printf("error: undefined data type [line %d]\n", linec);
+        printf("error: <%s> - undefined data type [line %d]\n", ins, linec);
         err = 1;
     }
     return -1; /*not a ins, or not supported ins.*/
+}
+/*the following function classifys the given line to its type.
+input the first word (non label) of a line.
+returns:
+0 - invalid line
+1 - command line
+2 - insturction line
+*/
+int identify_line_type(char *cmd)
+{
+    if ((ins_identify(cmd) == -1) && (is_cmd(cmd) >= 0))
+        return 1; /*the line is a command.*/
+    if ((ins_identify(cmd) >= 0) && (is_cmd(cmd) == -1))
+        return 2; /*the line is an instruction.*/
+    return 0;     /*invalid line.*/
 }
 /*check if label contains illigal characters of execced allowed lenght, argument is a string.*/
 void label_check(char *label)
@@ -84,7 +100,7 @@ void label_check(char *label)
     if (cmd_identify(label) >= 0)
     {
         err = 1;
-        printf("error: reserved word as a label [line %d]\n", linec);
+        printf("error: <%s> - reserved word as a label [line %d]\n", label, linec);
         return;
     }
     if (strlen(label) > LABEL_MAX_LEN)
@@ -97,7 +113,7 @@ void label_check(char *label)
         if ((!isalpha(label[i])) && (!isdigit(label[i])))
         {
             err = 1;
-            printf("error: labal contains illigal characters [line %d]\n", linec);
+            printf("error: <%s> - labal contains illigal characters [line %d]\n", label, linec);
             return;
         }
 }
@@ -114,5 +130,5 @@ int ignore_label(data_t node)
         printf("warning: label with extern/entry is not supported [line %d]\n", linec);
         return 2; /*label to be ignored.*/
     }
-    return 0;
+    return 0; /*label is accepted.*/
 }

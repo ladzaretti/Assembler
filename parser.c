@@ -9,22 +9,32 @@
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
 char *path_fname_extract(char *Fpath)
 {
-    int i = 0;
+    int i = 1;
     char *fname = NULL; /*string to contain the filename from given path*/
     char *temp = NULL;  /*temp char pointer for allocation*/
-    while (*(Fpath + i) != '.')
+    while (*(Fpath + i - 1) != '.')
     {
-        temp = (char *)realloc(fname, sizeof(char) * (i + 1));
+        temp = (char *)realloc(fname, sizeof(char) * i);
         if (!temp) /*check if allocation was successful*/
         {
             puts("allocation failed");
             return NULL;
         }
-        fname = temp;
-        *(fname + i) = *(Fpath + i); /*copy current charecter from path.*/
-        i++;
+        else
+        {
+            fname = temp;
+            *(fname + i - 1) = *(Fpath + i - 1); /*copy current charecter from path.*/
+            i++;
+        }
     }
-    *(fname + i) = 0; /*terminate filename.*/
+    temp = (char *)realloc(fname, sizeof(char) * i); /*reallocated space for string termination*/
+    if (!temp)
+        puts("allocation failed");
+    else
+    {
+        fname = temp;
+        *(fname + i - 1) = 0; /*terminate string.*/
+    }
     return fname;
 }
 /*the following function removes whitespaces from the given data.*/
