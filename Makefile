@@ -12,11 +12,13 @@ OBJ= $(SRC:.c=.o)
 TARGET= assembler
 assembler: $(OBJ)
 	$(CC) $(LFLAGS) $^ -o $@
-assembler.o: assembler.c parser.h database.h
+assembler.o: assembler.c parser.h database.h err_check.h
 	$(CC) $(CFLAGS) $< -o $@
-parser.o: parser.c parser.h database.h
+parser.o: parser.c database.h err_check.h
 	$(CC) $(CFLAGS) $< -o $@
-database.o: database.c database.h
+data_structure.o: data_structure.c database.h
+	$(CC) $(CFLAGS) $< -o $@
+err_check.o: err_check.c database.h
 	$(CC) $(CFLAGS) $< -o $@
 #delete executables and object files
 clean:

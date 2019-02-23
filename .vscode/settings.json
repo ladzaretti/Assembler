@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdlib.h": "c",
-        "database.h": "c"
+        "database.h": "c",
+        "err_check.h": "c"
     }
 }

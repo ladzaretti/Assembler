@@ -1,6 +1,5 @@
 #ifndef PARSER_H
 #define PARSER_H
-#include "database.h"
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
 char *path_fname_extract(char *);
 /*the following function gets a string of a line as an argument, returns label if exists, otherwise NULL*/

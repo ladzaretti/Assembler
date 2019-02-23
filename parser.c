@@ -3,8 +3,9 @@
 #include <string.h>
 #include <ctype.h>
 #include "database.h"
-#include "parser.h"
+#include "err_check.h"
 #define COMMA "," /*comma macro for future use with strtok: geting arguments tokens*/
+/*some functions (might have been slightly modified) are reused from assignment 22*/
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
 char *path_fname_extract(char *Fpath)
 {
@@ -79,9 +80,14 @@ EOF = -1 - reached input's EOF*/
 int fget_line(char **str, FILE *stream)
 {
     int i = 1, ch;                                          /*ch = will get char from fgets, i = counts amount of char received, used for reallocation.*/
+    int leading_ws_flag = 1;                                /*leading whitespace flag.*/
     char *temp = NULL;                                      /*temporary pointer to store reallocated memory block, to prevent data loss in case of failure.*/
     while (((ch = fgetc(stream)) != '\n') && ((ch != EOF))) /*get all chars from stdio till EOF / newline*/
     {
+        if (((ch == ' ') || (ch == '\t')) && (leading_ws_flag)) /*skip leading white spaces.*/
+            continue;
+        else
+            leading_ws_flag = 0;
         temp = (char *)realloc(*str, sizeof(char) * i); /*allocate one more chunk of memory of size char*/
         if (!temp)
         {
@@ -248,8 +254,9 @@ data_t *get_data(char **src)
         }
         strncpy(node->label, cmd, strlen(cmd)); /*copy the label into the data obj without the null terminator.*/
         (node->label)[strlen(cmd) - 1] = 0;     /*terminate at colon.*/
-        free(cmd);                              /*free allocated space from utility function get_nxt_word.*/
-        cmd = get_nxt_word(src);                /*get the next word.*/
+        label_check(node->label);
+        free(cmd);               /*free allocated space from utility function get_nxt_word.*/
+        cmd = get_nxt_word(src); /*get the next word.*/
     }
     if (cmd) /*if there is an unattended word*/
     {
@@ -264,8 +271,6 @@ data_t *get_data(char **src)
     }
     remove_wspaces(src); /*strip white spaces from the reminder.*/
     if (strlen(*src))    /*if the reminder (=arguments) is non empty.*/
-    {
         node->narg = get_CSV_arg(src, &(node->arg));
-    }
     return node;
 }
