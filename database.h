@@ -1,7 +1,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
-#include <stdio.h>
-#include <stdlib.h>
+#define TRUE 1
+#define FALSE 0
 extern const char cmd_string[16][5];
 extern const char ins_string[4][8];
 extern int linec; /*read line counter.*/
@@ -29,6 +29,7 @@ typedef enum
     RTS = 14,
     STOP = 15
 } command;
+/*list of known instructions.*/
 typedef enum
 {
     DATA = 0,
@@ -39,7 +40,8 @@ typedef enum
 /*list of differant linked list data types.*/
 enum node_type
 {
-    DATA_T = 0
+    DATA_T = 0,
+    SYMBOL_T = 1
 };
 /*struct to store parsed line*/
 typedef struct data
@@ -49,6 +51,13 @@ typedef struct data
     char **arg;
     int narg;
 } data_t;
+typedef struct symbol
+{
+    char *label;
+    unsigned int address;
+    unsigned int command;
+    unsigned int external;
+} symbol_t;
 /*generic double linked list, data fields are changable.*/
 typedef struct node *ptr;
 typedef struct node
@@ -74,4 +83,6 @@ void list_push(list_t *, void *);
 /*the following function receives a pointer to a linked list and a generic data pointer.
 the data is then enqueued into the end of the list within a new node.*/
 void list_enqueue(list_t *, void *);
+symbol_t *create_symbol_node(char *);
+symbol_t *search_label(list_t *, char *);
 #endif

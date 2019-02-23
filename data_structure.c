@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "database.h"
 /*array of strings of known data types.*/
 const char ins_string[4][8] = {".data", ".string", ".entry", ".extern"};
@@ -24,12 +27,20 @@ static void free_dt(void **node)
         free_CSV_arg(&((*p)->arg), (*p)->narg);
     free(*p);
 }
+/*free symbol_t node.*/
+static void free_sym(void **node)
+{
+    symbol_t **p = (symbol_t **)node;
+    if ((*p)->label)       /*if field is non NULL.*/
+        free((*p)->label); /*free field.*/
+    free(*p);
+}
 /*the following function gets a pointer to a list. the function frees it. 
 free data node by its type. the function frees the address of a node by a void ptr, gets its type as enum.
 the node is then freed by using the coresponding function with a pointer to it.*/
 void list_free(list_t *list, int type)
 {
-    void (*fp_free_dt[])(void **) = {&free_dt};
+    void (*fp_free_dt[])(void **) = {&free_dt, &free_sym};
     ptr p;                  /*pointer to store address of the node before going to the next.*/
     ptr *h = &(list->head); /*get the address of the head pointer*/
     while (*h)              /*iterate over the linked list*/
@@ -59,23 +70,28 @@ static void print_dt(void *node)
     }
     puts("__________________________________");
 }
+/*the following function prints the fields of a symbol_t object. receives data_t. return none.*/
+static void print_sym(void *node)
+{
+    symbol_t *p = (symbol_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
+    puts("__________________________________");
+    if ((*p).label) /*if label exists*/
+        printf("label=<%s>|", (*p).label);
+    printf("address=<%d>|", (*p).address);
+    printf("command=<%s>|", (*p).command == 1 ? "true" : "false");
+    printf("external=<%s>\n", (*p).external == 1 ? "true" : "false");
+    puts("__________________________________");
+}
 /*the following function prints the given generic list, the type of the node is passed as an enum entry.
 print list with given data type.*/
 void list_print(list_t list, int type)
 {
-    void (*fp_prnt_dt[])(void *) = {&print_dt}; /*array of printing functions, sorted by type.*/
-    ptr h = list.head;                          /*set pointer to head.*/
-    switch (type)
+    void (*fp_prnt_dt[])(void *) = {&print_dt, &print_sym}; /*array of printing functions, sorted by type.*/
+    ptr h = list.head;                                      /*set pointer to head.*/
+    while (h)                                               /*iterate thought all its nodes*/
     {
-    case (DATA_T): /*deal with data_t data list.*/
-        while (h)  /*iterate thought all its nodes*/
-        {
-            (*fp_prnt_dt[type])((void *)h->data); /*activate printing by type. print node.*/
-            h = h->next;                          /*advance to the next node.*/
-        }
-        break;
-    default:
-        break;
+        (*fp_prnt_dt[type])((void *)h->data); /*activate printing by type. print node.*/
+        h = h->next;                          /*advance to the next node.*/
     }
 }
 /*the following function receives a pointer to a linked list and a generic data pointer.
@@ -128,4 +144,46 @@ void list_enqueue(list_t *list, void *data)
     list->tail = nnode;       /*set node as the new tail.*/
     nnode->next = NULL;       /*terminate next of the new tail.*/
     return;
+}
+
+symbol_t *create_symbol_node(char *label)
+{
+    symbol_t *node = (symbol_t *)calloc(1, sizeof(symbol_t)); /*allocate new data obj.*/
+    if (node)
+    {
+        node->label = (char *)malloc(strlen(label) + 1); /*allocate space in symbol obj for the given label.*/
+        if (!node->label)
+        {
+            printf("allocation failed.\n");
+            return NULL;
+        }
+        strcpy(node->label, label); /*copy the label into the data obj without the null terminator.*/
+        (node->label)[strlen(label)] = 0;
+        node->address = 0;
+        node->command = FALSE;
+        node->external = FALSE;
+    }
+    else
+    {
+        printf("allocation failed.\n");
+        return NULL;
+    }
+    return node;
+}
+
+symbol_t *search_label(list_t *sym_t, char *label)
+{
+    ptr h = sym_t->head;
+    while (h)
+    {
+        symbol_t *p = (symbol_t *)h->data;
+        if (!(strcmp(p->label, label))) /*if label found in symbol list*/
+        {
+            printf("error: <%s> - label already exists [line %d]\n", label, linec);
+            err = TRUE;
+            return p;
+        }
+        h = h->next;
+    }
+    return NULL;
 }
