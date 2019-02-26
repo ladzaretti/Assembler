@@ -61,6 +61,26 @@ void remove_wspaces(char **str)
     }
     free(temp_str); /*free copied string memory.*/
 }
+/*the following function removes leading whitespaces from the given data.*/
+void remove_leading_wspaces(char **str)
+{
+    int i = 0, j = 0;
+    char *temp_str = NULL;
+    temp_str = (char *)malloc(strlen(*str) + 1); /*cpy str to avoid src-dest overlap in strcpy inside the while loop*/
+    if (!temp_str)
+    {
+        puts("allocation failed");
+        return;
+    }
+    strcpy(temp_str, *str);                               /*copy given string.*/
+    while ((*(*str + i) == ' ') || (*(*str + i) == '\t')) /*search thought the given data for white spaces.*/
+    {
+        strcpy(*str + i, temp_str + i + j + 1); /*overwrite whitespace with the ending substring after it*/
+        j++;                                    /*counts total overwrites*/
+        i--;                                    /*rewind i by one to compensate for overwritten char*/
+    }
+    free(temp_str); /*free copied string memory.*/
+}
 /*the following function gets a string of a line as an argument, returns label if exists, otherwise NULL*/
 char *get_label(char **str)
 {
@@ -94,7 +114,7 @@ int fget_line(char **str, FILE *stream)
     char *temp = NULL;                                      /*temporary pointer to store reallocated memory block, to prevent data loss in case of failure.*/
     while (((ch = fgetc(stream)) != '\n') && ((ch != EOF))) /*get all chars from stdio till EOF / newline*/
     {
-        if (((ch == ' ') || (ch == '\t')) && (leading_ws_flag)) /*skip leading white spaces.*/
+        if (((ch == ' ') || (ch == '\t')) && (leading_ws_flag)) /*skip leading whitespaces.*/
             continue;
         else
             leading_ws_flag = 0;
@@ -122,7 +142,7 @@ int fget_line(char **str, FILE *stream)
     }
     if (ch == EOF) /*return EOF if got there.*/
         return EOF;
-    return 1; /*there is still date in stdio but got one line, return 1.*/
+    return 1; /*there is still date in the stream but got one line, return 1.*/
 }
 /*the following function receives a pointer to a string as argument.
 the function returns pointer to the extracted first word in the given string.
@@ -209,7 +229,6 @@ int get_CSV_arg(char **data, char ***arg_mat)
     int i = 0;                      /*arguments counter*/
     if (check_missing_comma(*data)) /*check for missing comma.*/
         return -5;
-    remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
     if (**data == ',')                            /* check if the first char in the striped string is a comma*/
         return -1;                                /*return proper error code*/
     else if (strstr(*data, ",,"))                 /*search for consecutive of commas*/
@@ -217,6 +236,7 @@ int get_CSV_arg(char **data, char ***arg_mat)
     else if (*(*data + strlen(*data) - 1) == ',') /*check if the last digit is a comma*/
         return -3;                                /*return error code*/
     token = strtok(*data, COMMA);                 /*get first token*/
+    remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
     while (token != NULL)
     {
         i++;
@@ -279,8 +299,25 @@ data_t *get_data(char **src)
         strcpy(node->cmd, cmd); /*copy to data_t*/
         free(cmd);              /*free cmd.*/
     }
-    remove_wspaces(src); /*strip white spaces from the reminder.*/
-    if (strlen(*src))    /*if the reminder (=arguments) is non empty.*/
+    remove_wspaces(src);
+    if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
         node->narg = get_CSV_arg(src, &(node->arg));
     return node;
+}
+/*the following function receives a string representing an integer number.
+using strtod, the string is converted to a double. if the double has a decimal value other then zero, the convertion fails.
+zero is returned. the vessel num doesnt changed.
+if successful, 1 is return and num gets the whole part of the double.*/
+int get_num(char *src, int *num)
+{
+    char *ptr = NULL;                                                        /*pointer to receive the sting strtod didnt converted to double.*/
+    double num_db = strtod(src, &ptr);                                       /*store converted double in num_db. reminder in ptr.*/
+    int temp = (int)num_db;                                                  /*store the whole part of the double.*/
+    if ((strlen(ptr) > 0) || (num_db != (double)temp) || (strchr(src, '.'))) /*check for conversion reminder or if the converted number has a decimal part. the last logical part can be removed in order to exepct floating point numbers witl zero as decimal.*/
+        return 0;
+    else
+    {
+        *num = temp; /*the whole src string is an interger.*/
+        return 1;    /*if the whole str converted to double, return true, as the given input is indeed a real number.*/
+    }
 }

@@ -1,8 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "database.h"
-#define LABEL_MAX_LEN 31
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
 int err_invalid_cms(int err_num)
@@ -97,6 +97,12 @@ int identify_line_type(char *cmd)
 void label_check(char *label)
 {
     int i = 0;
+    if (!(isalpha(label[0])))
+    {
+        err = 1;
+        printf("error: <%s> - first character is not alphabetic [line %d]\n", label, linec);
+        return;
+    }
     if (cmd_identify(label) >= 0)
     {
         err = 1;
@@ -131,4 +137,102 @@ int ignore_label(data_t node)
         return 2; /*label to be ignored.*/
     }
     return 0; /*label is accepted.*/
+}
+/*the following function checks if the given string is a register. if so, the id of the register is returned.
+otherwise -1 is returned.*/
+int is_register(char *str)
+{
+    int i = 0;
+    for (; i <= REG_NUM; i++)
+    {
+        if ((strcmp(str, registers[i])) == 0)
+            return i;
+    }
+    return -1;
+}
+/*the following function checks if the arguments of the given cmd are valid.
+if so, the number of "words" = addresses needed for storage is returned.
+in case of failure, error flag is updated to TRUE.*/
+int cmd_operand_check(command id, data_t node)
+{
+    char **arg = node.arg;
+    int cmd_num_op[16] = {2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0};
+    if (node.narg > cmd_num_op[id])
+    {
+        printf("error: too many operands for <%s> [line %d]\n", node.cmd, linec);
+        err = TRUE;
+        return 0;
+    }
+    if (node.narg < cmd_num_op[id])
+    {
+        printf("error: too few operands for <%s> [line %d]\n", node.cmd, linec);
+        err = TRUE;
+        return 0;
+    }
+    switch (id)
+    {
+        /*src hash method = 1,3,5. dec hash method = 1,3,5*/
+    case (CMP):
+        if (((is_register(arg[0])) != -1) && ((is_register(arg[1])) != -1)) /*check if both of the arguments are registers.*/
+            return 1;                                                       /*return 1 as the needed space in memory, two registers in one machine "word".*/
+
+        /*src hash method = 1,3,5. dec hash method = 3,5*/
+    case (MOV):
+    case (ADD):
+    case (SUB):
+        if (((is_register(arg[0])) != -1) && ((is_register(arg[1])) != -1)) /*check if both of the arguments are registers.*/
+            return 1;                                                       /*return 1 as the needed space in memory, two registers in one machine "word".*/
+        /*src hash method = 3. dec hash method = 3,5*/
+    case (LEA):
+        /* code */
+        break;
+        /*src hash method = NONE. dec hash method = 3,5*/
+    case (NOT):
+    case (CLR):
+    case (INC):
+    case (DEC):
+    case (JMP):
+    case (BNE):
+    case (RED):
+    case (JSR):
+        /* code */
+        break;
+        /*src hash method = NONE. dec hash method = 1,3,5*/
+    case (PRN):
+        /* code */
+        break;
+        /*no operands.*/
+    case (RTS):
+    case (STOP):
+        /* code */
+        break;
+    default:
+        break;
+    }
+    printf("%d,%d\n", cmd_num_op[id], node.narg);
+    return cmd_num_op[id];
+}
+int check_string(char **str)
+{
+    int i;
+    char *p;
+    if ((*(*str) != '\"') || (*(*str + (strlen(*str)) - 1) != '\"'))
+    {
+        printf("error: missing brackets in string <%s> [line %d]\n", *str, linec);
+        err = TRUE;
+        return 0;
+    }
+    for (i = 0; i < strlen(*str); i++)
+        if (!(isprint(*(*str + i))))
+        {
+            printf("error: string contains unprintable characters <%s> [line %d]\n", *str, linec);
+            err = TRUE;
+            return 0;
+        }
+    /*p = *(str + 1);
+    free(*str);
+    *str = p;
+    *(*str + (strlen(*str)) - 1) = 0;
+    free((*str + (strlen(*str))));*/
+    /*check if string in arg can be done without removing the inner whitespaces!*/
 }

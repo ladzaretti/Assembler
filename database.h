@@ -1,9 +1,14 @@
 #ifndef DATABASE_H
 #define DATABASE_H
+#define CMD_LINE 1 /*define command line ID*/
+#define INS_LINE 2 /*define instruction line ID.*/
 #define TRUE 1
 #define FALSE 0
+#define REG_NUM 7
+#define LABEL_MAX_LEN 31
 extern const char cmd_string[16][5];
 extern const char ins_string[4][8];
+extern const char registers[8][4];
 extern int linec; /*read line counter.*/
 extern int err;   /*global error flag*/
 extern int IC;
@@ -83,6 +88,11 @@ void list_push(list_t *, void *);
 /*the following function receives a pointer to a linked list and a generic data pointer.
 the data is then enqueued into the end of the list within a new node.*/
 void list_enqueue(list_t *, void *);
+/*the following function creates a symbol node with the given label.
+input is a label string, the function then returns to the caller the address of the dynamically allocated node.
+the node is initialized to 0 in all other fields.*/
 symbol_t *create_symbol_node(char *);
+/*this function receives a pointer to a list and a label to search in the given list.
+if the label exists, its node address is return to the caller. otherwise NULL is returned.*/
 symbol_t *search_label(list_t *, char *);
 #endif

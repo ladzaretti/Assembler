@@ -26,4 +26,12 @@ returns:
 2 - insturction line
 */
 int identify_line_type(char *cmd);
+/*the following function checks if the given string is a register. if so, the id of the register is returned.
+otherwise -1 is returned.*/
+int is_register(char *);
+/*the following function checks if the arguments of the given cmd are valid.
+if so, the number of "words" = addresses needed for storage is returned.
+in case of failure, error flag is updated to TRUE.*/
+int cmd_operand_check(command, data_t);
+int check_string(char **);
 #endif

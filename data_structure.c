@@ -6,6 +6,8 @@
 const char ins_string[4][8] = {".data", ".string", ".entry", ".extern"};
 /*array of strings with known commands names as defined is the assignment, to be compared using strcmp with input cmd from user.*/
 const char cmd_string[16][5] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
+/*array of the system's registers.*/
+const char registers[8][4] = {"@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"};
 /*following function frees an dynamically allocated array of strings.
 arguments are pointer to an array of strings, and size of the array (number of strings stored).*/
 static void free_CSV_arg(char ***arg_mat, int arg_num)
@@ -145,7 +147,9 @@ void list_enqueue(list_t *list, void *data)
     nnode->next = NULL;       /*terminate next of the new tail.*/
     return;
 }
-
+/*the following function creates a symbol node with the given label.
+input is a label string, the function then returns to the caller the address of the dynamically allocated node.
+the node is initialized to 0 in all other fields.*/
 symbol_t *create_symbol_node(char *label)
 {
     symbol_t *node = (symbol_t *)calloc(1, sizeof(symbol_t)); /*allocate new data obj.*/
@@ -157,9 +161,8 @@ symbol_t *create_symbol_node(char *label)
             printf("allocation failed.\n");
             return NULL;
         }
-        strcpy(node->label, label); /*copy the label into the data obj without the null terminator.*/
-        (node->label)[strlen(label)] = 0;
-        node->address = 0;
+        strcpy(node->label, label); /*copy the label into the symbol obj.*/
+        node->address = 0;          /*initialize node fields to 0.*/
         node->command = FALSE;
         node->external = FALSE;
     }
@@ -171,19 +174,21 @@ symbol_t *create_symbol_node(char *label)
     return node;
 }
 
+/*this function receives a pointer to a list and a label to search in the given list.
+if the label exists, its node address is return to the caller. otherwise NULL is returned.*/
 symbol_t *search_label(list_t *sym_t, char *label)
 {
-    ptr h = sym_t->head;
+    ptr h = sym_t->head; /*set pointer to the head of the list.*/
     while (h)
     {
-        symbol_t *p = (symbol_t *)h->data;
-        if (!(strcmp(p->label, label))) /*if label found in symbol list*/
+        symbol_t *p = (symbol_t *)h->data; /*set pointer to the data field of the list (cast by pointer).*/
+        if (!(strcmp(p->label, label)))    /*if label found in symbol list*/
         {
-            printf("error: <%s> - label already exists [line %d]\n", label, linec);
-            err = TRUE;
-            return p;
-        }
-        h = h->next;
+            err = TRUE; /*set error flag to TRUE.*/
+            return p;   /*return node containing the label.*/
+        }               /*did my best to minimize arrow code.*/
+
+        h = h->next; /*procced to the next node.*/
     }
-    return NULL;
+    return NULL; /*not found, return NULL.*/
 }

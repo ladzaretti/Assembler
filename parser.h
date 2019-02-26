@@ -6,6 +6,8 @@ char *path_fname_extract(char *);
 char *get_label(char **);
 /*the following function removes whitespaces from the given data.*/
 void remove_wspaces(char **);
+/*the following function removes leading whitespaces from the given data.*/
+void remove_leading_wspaces(char **str);
 /*get input dynamically from stdio stream(keyboard/redirection).
 function arguments: pointer to an array of char (string)
 return values:
@@ -22,4 +24,9 @@ coresponding field in the data structure object.
 the first word is checked, if the last char of the word is ':" then the word stored as a label,otherwise as a cmd.
 the rest of the line, if there is any is stored as the cmd arguments.*/
 data_t *get_data(char **);
+/*the following function receives a string representing an integer number.
+using strtod, the string is converted to a double. if the double has a decimal value other then zero, the convertion fails.
+zero is returned. the vessel num doesnt changed.
+if successful, 1 is return and num gets the whole part of the double.*/
+int get_num(char *, int *);
 #endif
