@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "database.h"
 #include "parser.h"
 #include "err_check.h"
+#include "data_structure.h"
 int linec = 1; /*line counter.*/
 int err;       /*error flag.*/
 int DC = 0;    /*data counter.*/
@@ -47,7 +49,7 @@ int main(int argc, char **argv)
                 }
                 if ((pdata = get_data(&line))) /*if there is data, i.e the line isn't empty.*/
                 {
-                    ign_label = ignore_label(*pdata); /*get label status. 1 = line has label onlty, 2 = ext/ent with label, 0 = label is valid.*/
+                    ign_label = ignore_label(*pdata); /*get label status. 1 = line has label only, 2 = ext/ent with label, 0 = label is valid.*/
                     if (ign_label == 1)               /*free current node, as its being ignored. line has label only.*/
                     {
                         free(pdata->label); /*free label string*/
@@ -114,11 +116,17 @@ int main(int argc, char **argv)
                                 if (id == DATA)
                                 {
                                     char **arg;
-                                    int num;
-                                    arg = pdata->arg;
-                                    for (i = 0; i < pdata->narg; i++)
+                                    int num;          /*in this context, num is a dummy variable for use in get_num.
+                                    in the second scan, it will contain the interger extracted. */
+                                    arg = pdata->arg; /*cast by pointer to get the data field*/
+                                    if (!(pdata->narg))
+                                    {
+                                        printf("error: uninitilaied .data variable [line %d]\n", linec);
+                                        err = TRUE;
+                                    }                                 /*if found, print error.*/
+                                    for (i = 0; i < pdata->narg; i++) /*check and count integer arguments.*/
                                         if (get_num(arg[i], &num))
-                                            DC++;
+                                            DC++; /*if valid, inc DC.*/
                                         else
                                         {
                                             printf("error: <%s> - is not an integer [line %d]\n", arg[i], linec); /*if found, print error.*/
@@ -128,15 +136,38 @@ int main(int argc, char **argv)
                                 if (id == STRING)
                                 {
                                     char **arg;
-                                    arg = pdata->arg;
-                                    check_string(arg);
-                                    puts(*arg);
+                                    arg = pdata->arg;      /*cast by pointer to get the data field*/
+                                    if ((pdata->narg) > 0) /*check string for errors*/
+                                    {
+                                        check_string(arg);
+                                        DC += strlen(*arg) + 1; /*addvance DC by the lenght of the given string + null.*/
+                                    }
+                                    else
+                                    {
+                                        printf("error: uninitilaied .string variable [line %d]\n", linec);
+                                    }
                                 }
                             }
                             if (id == EXTERN)
                             {
-                                printf("ins line, extern\n");
+                                char **arg;
+                                int i = 0;
                                 /*insert into symbol table with extern mark.*/
+                                symbol_t *psymbol = NULL; /*new symbol node.*/
+                                /**/
+                                for (; i < pdata->narg; i++)
+                                {
+                                    arg = (pdata->arg) + i;
+                                    if (search_label(&symbol_list, *arg))
+                                    {
+                                        printf("error: <%s> - label already exists [line %d]\n", *arg, linec);
+                                        err = TRUE;
+                                    }                                                               /*if found, print error.*/
+                                    list_enqueue(&symbol_list, psymbol = create_symbol_node(*arg)); /*create and enqueue symbol node with given label.*/
+                                    psymbol->command = FALSE;                                       /*mark as code.*/
+                                    psymbol->address = 0;                                           /*set address as zero*/
+                                    psymbol->external = TRUE;
+                                } /*set external as true.*/
                             }
                             /*printf("ins id = <%s>\n", id >= 0 ? ins_string[id] : "-1");*/
                             break;
@@ -145,10 +176,22 @@ int main(int argc, char **argv)
                             break;
                         } /*end of switch.*/
                     }
-                }           /*end of symbol table creation block.*/
+                } /*end of symbol table creation block.*/
+                /*update address in symbol list according to IC. add IC-100+1 to all addresses where external = FALSE*/
                 free(temp); /*free current line string.*/
                 linec++;
-            }                                  /*end of input stream.*/
+            } /*end of input stream.*/
+            {
+                ptr h = symbol_list.head;
+                symbol_t *sym;
+                while (h)
+                {
+                    sym = h->data;
+                    h = (h)->next;
+                    if ((sym->external == FALSE) && (sym->command == FALSE))
+                        sym->address += IC;
+                }
+            }
             list_print(symbol_list, SYMBOL_T); /*print symbol table*/
             list_print(list, DATA_T);          /*print list*/
             list_free(&symbol_list, SYMBOL_T); /*free symbol table.*/

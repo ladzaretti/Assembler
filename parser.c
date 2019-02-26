@@ -64,7 +64,7 @@ void remove_wspaces(char **str)
 /*the following function removes leading whitespaces from the given data.*/
 void remove_leading_wspaces(char **str)
 {
-    int i = 0, j = 0;
+    int j = 0;
     char *temp_str = NULL;
     temp_str = (char *)malloc(strlen(*str) + 1); /*cpy str to avoid src-dest overlap in strcpy inside the while loop*/
     if (!temp_str)
@@ -73,13 +73,10 @@ void remove_leading_wspaces(char **str)
         return;
     }
     strcpy(temp_str, *str);                               /*copy given string.*/
-    while ((*(*str + i) == ' ') || (*(*str + i) == '\t')) /*search thought the given data for white spaces.*/
-    {
-        strcpy(*str + i, temp_str + i + j + 1); /*overwrite whitespace with the ending substring after it*/
-        j++;                                    /*counts total overwrites*/
-        i--;                                    /*rewind i by one to compensate for overwritten char*/
-    }
-    free(temp_str); /*free copied string memory.*/
+    while ((*(*str + j) == ' ') || (*(*str + j) == '\t')) /*search thought the given data for white spaces.*/
+        j++;                                              /*counts total leading whitespaces*/
+    strcpy(*str, temp_str + j);                           /*overwrite whitespace with the ending substring after it*/
+    free(temp_str);                                       /*free copied string memory.*/
 }
 /*the following function gets a string of a line as an argument, returns label if exists, otherwise NULL*/
 char *get_label(char **str)
@@ -233,10 +230,10 @@ int get_CSV_arg(char **data, char ***arg_mat)
         return -1;                                /*return proper error code*/
     else if (strstr(*data, ",,"))                 /*search for consecutive of commas*/
         return -2;                                /*if found, return proper code*/
-    else if (*(*data + strlen(*data) - 1) == ',') /*check if the last digit is a comma*/
+    else if (*(*data + strlen(*data) - 1) == ',') /*check if the last char is a comma*/
         return -3;                                /*return error code*/
     token = strtok(*data, COMMA);                 /*get first token*/
-    remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
+    /*remove_wspaces(data);                       remove white spaces from arguments prior phrasing.*/
     while (token != NULL)
     {
         i++;
@@ -255,6 +252,37 @@ int get_CSV_arg(char **data, char ***arg_mat)
         token = strtok(NULL, COMMA); /*find next token*/
     }
     return i; /*return number of arguments received*/
+}
+/*the following function receives the raw string containing the arguments got from the user.
+the data is analyzed. if the raw string contains no errors (of 5 types listed below) a array of strings is returned.
+in which the array elements are the arguments in chronological order (by index) as received from the user.
+the function's arguments are pointer to the raw data string, pointer to an empty char matrix.
+the function returns an error code if encountered any, otherwise stores the arguments in a dynamically allocated array of strings and returns the number of arguments extracted.*/
+int get_string_arg(char **data, char ***arg_mat)
+/*return values:    -1 = Illegal comma
+                    -3 = Extraneous text after end of command (comma specific)
+                    -4 = allocation failed
+                    -5 = missing comma between parameters*/
+{
+    char **temp = NULL;
+    if (**data == ',')                                 /* check if the first char in the striped string is a comma*/
+        return -1;                                     /*return proper error code*/
+    if (*(*data + strlen(*data) - 1) == ',')           /*check if the last char is a comma*/
+        return -3;                                     /*return error code*/
+    remove_leading_wspaces(data);                      /*remove white spaces from arguments prior phrasing.*/
+    temp = (char **)realloc(*arg_mat, sizeof(char *)); /*reallocate new block of memory for a pointer to a string*/
+    if (temp == NULL)                                  /*check if allocation was successful*/
+    {
+        printf("Allocation Failed\n");
+        return -4; /*return error if allocation failed*/
+    }
+    else
+    {
+        *arg_mat = temp;                                 /*give memory block back if allocation was successful*/
+        *(*arg_mat) = (char *)malloc(strlen(*data) + 1); /*allocate new space for saving token*/
+        strcpy(*(*arg_mat), *data);                      /*copy token to newly allocated memory space*/
+    }
+    return 1; /*return 1 as one string was extracted*/
 }
 /*the following function gets a given string (line from given file), and stores its componenets in the 
 coresponding field in the data structure object.
@@ -299,9 +327,18 @@ data_t *get_data(char **src)
         strcpy(node->cmd, cmd); /*copy to data_t*/
         free(cmd);              /*free cmd.*/
     }
-    remove_wspaces(src);
-    if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
-        node->narg = get_CSV_arg(src, &(node->arg));
+    if ((node->cmd)&&(!(strcmp(node->cmd, ".string")))) /*cmd field is NULL and of .string type.*/
+    {
+        remove_leading_wspaces(src);
+        if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
+            node->narg = get_string_arg(src, &(node->arg));
+    }
+    else
+    {
+        remove_wspaces(src); /*strip white spaces from the reminder.*/
+        if (strlen(*src))    /*if the reminder (=arguments) is non empty.*/
+            node->narg = get_CSV_arg(src, &(node->arg));
+    }
     return node;
 }
 /*the following function receives a string representing an integer number.

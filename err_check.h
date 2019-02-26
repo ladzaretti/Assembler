@@ -33,5 +33,9 @@ int is_register(char *);
 if so, the number of "words" = addresses needed for storage is returned.
 in case of failure, error flag is updated to TRUE.*/
 int cmd_operand_check(command, data_t);
+/*the following function checks if the given .string is valid. if so, the sorrounding brackets are removed.
+function input is an adress of pointer to string.
+output 0 - string invalid.
+       1 - string is valid.  */
 int check_string(char **);
 #endif

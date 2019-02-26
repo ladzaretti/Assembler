@@ -209,30 +209,34 @@ int cmd_operand_check(command id, data_t node)
     default:
         break;
     }
-    printf("%d,%d\n", cmd_num_op[id], node.narg);
     return cmd_num_op[id];
 }
+/*the following function checks if the given .string is valid. if so, the sorrounding brackets are removed.
+function input is an adress of pointer to string.
+output 0 - string invalid.
+       1 - string is valid.  */
 int check_string(char **str)
 {
     int i;
-    char *p;
-    if ((*(*str) != '\"') || (*(*str + (strlen(*str)) - 1) != '\"'))
+    char *p = (char *)malloc(strlen(*str));
+    if (((*(*str) != '\"') || (*(*str + (strlen(*str)) - 1) != '\"')) || ((strlen(*str) == 1) && ((*(*str) == '\"')))) /*check for missing brackets or if the given string is of length 0 and is a bracket*/
     {
         printf("error: missing brackets in string <%s> [line %d]\n", *str, linec);
         err = TRUE;
+        free(p);
         return 0;
     }
     for (i = 0; i < strlen(*str); i++)
         if (!(isprint(*(*str + i))))
         {
-            printf("error: string contains unprintable characters <%s> [line %d]\n", *str, linec);
+            printf("error: string contains unprintable characters <%s> [line %d]\n", *str, linec); /*check for unprintable chars*/
             err = TRUE;
+            free(p);
             return 0;
         }
-    /*p = *(str + 1);
-    free(*str);
-    *str = p;
-    *(*str + (strlen(*str)) - 1) = 0;
-    free((*str + (strlen(*str))));*/
-    /*check if string in arg can be done without removing the inner whitespaces!*/
+    strcpy(p, *str + 1);             /*copy string without the opening bracket.*/
+    strncpy(*str, p, strlen(p) - 1); /*overwrite opening bracket.*/
+    *(*str + strlen(p) - 1) = 0;     /*terminate string at closing bracket.*/
+    free(p);                         /*free temp string pointer.*/
+    return 1;
 }
