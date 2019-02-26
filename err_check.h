@@ -29,6 +29,9 @@ int identify_line_type(char *cmd);
 /*the following function checks if the given string is a register. if so, the id of the register is returned.
 otherwise -1 is returned.*/
 int is_register(char *);
+/*the following function checks if @"s unnary operand is a valid register. input is the command string,
+output is FALSE if usage is invalid. otherwise TRUE.*/
+int is_register(char *str);
 /*the following function checks if the arguments of the given cmd are valid.
 if so, the number of "words" = addresses needed for storage is returned.
 in case of failure, error flag is updated to TRUE.*/

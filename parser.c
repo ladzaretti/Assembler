@@ -223,7 +223,8 @@ int get_CSV_arg(char **data, char ***arg_mat)
 {
     char *token = NULL; /**/
     char **temp = NULL;
-    int i = 0;                      /*arguments counter*/
+    int i = 0; /*arguments counter*/
+    remove_leading_wspaces(data);
     if (check_missing_comma(*data)) /*check for missing comma.*/
         return -5;
     if (**data == ',')                            /* check if the first char in the striped string is a comma*/
@@ -232,8 +233,8 @@ int get_CSV_arg(char **data, char ***arg_mat)
         return -2;                                /*if found, return proper code*/
     else if (*(*data + strlen(*data) - 1) == ',') /*check if the last char is a comma*/
         return -3;                                /*return error code*/
-    token = strtok(*data, COMMA);                 /*get first token*/
-    /*remove_wspaces(data);                       remove white spaces from arguments prior phrasing.*/
+    remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
+    token = strtok(*data, COMMA); /*get first token*/
     while (token != NULL)
     {
         i++;
@@ -261,8 +262,7 @@ the function returns an error code if encountered any, otherwise stores the argu
 int get_string_arg(char **data, char ***arg_mat)
 /*return values:    -1 = Illegal comma
                     -3 = Extraneous text after end of command (comma specific)
-                    -4 = allocation failed
-                    -5 = missing comma between parameters*/
+                    -4 = allocation failed*/
 {
     char **temp = NULL;
     if (**data == ',')                                 /* check if the first char in the striped string is a comma*/
@@ -327,18 +327,13 @@ data_t *get_data(char **src)
         strcpy(node->cmd, cmd); /*copy to data_t*/
         free(cmd);              /*free cmd.*/
     }
-    if ((node->cmd)&&(!(strcmp(node->cmd, ".string")))) /*cmd field is NULL and of .string type.*/
+    if ((node->cmd) && (!(strcmp(node->cmd, ".string")))) /*cmd field isnt NULL and of .string type.*/
     {
-        remove_leading_wspaces(src);
         if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
             node->narg = get_string_arg(src, &(node->arg));
     }
-    else
-    {
-        remove_wspaces(src); /*strip white spaces from the reminder.*/
-        if (strlen(*src))    /*if the reminder (=arguments) is non empty.*/
-            node->narg = get_CSV_arg(src, &(node->arg));
-    }
+    else if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
+        node->narg = get_CSV_arg(src, &(node->arg));
     return node;
 }
 /*the following function receives a string representing an integer number.

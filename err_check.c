@@ -13,22 +13,22 @@ int err_invalid_cms(int err_num)
         {
         case -1:
             printf("error: illegal comma [line %d]\n", linec);
-            return err = 1;
+            err = TRUE;
         case -2:
             printf("error: multiple consecutive commas [line %d]\n", linec);
-            return err = 1;
+            err = TRUE;
         case -3:
             printf("error: extraneous text after end of command [line %d]\n", linec);
-            return err = 1;
+            err = TRUE;
         case -4:
             printf("Allocation failed.\n");
-            return err = 1;
+            err = TRUE;
         case -5:
-            printf("error: missing comma.\n [line %d]", linec);
-            return err = 1;
+            printf("error: missing comma [line %d]\n", linec);
+            err = TRUE;
         }
     }
-    return 0;
+    return err_num;
 }
 /*this function takes a string as arguments and compares it to a list of values (strings) in cmd_string.
 the index of every such string is according to its ID as defined in the enum command list in database header.
@@ -140,7 +140,7 @@ int ignore_label(data_t node)
 }
 /*the following function checks if the given string is a register. if so, the id of the register is returned.
 otherwise -1 is returned.*/
-int is_register(char *str)
+int register_id(char *str)
 {
     int i = 0;
     for (; i <= REG_NUM; i++)
@@ -149,6 +149,27 @@ int is_register(char *str)
             return i;
     }
     return -1;
+}
+/*the following function checks if @"s unnary operand is a valid register. input is the command string,
+output is FALSE if usage is invalid. otherwise TRUE.*/
+int is_register(char *str)
+{
+    puts(str);
+    if ((str[0] == '@') && ((register_id(str + 1)) >= 0)) /*@'s unary operand is a register*/
+        return TRUE;
+    if ((str[0] == '@') && ((register_id(str + 1)) == -1)) /*@"s operand isnt a register*/
+    {
+        printf("error: invalid @ unary operator's operand, expecting register <%s> [line %d]\n", str + 1, linec);
+        err = TRUE;
+        return FALSE;
+    }
+    if ((str[0] != '@') && ((register_id(str)) >= 0)) /* use of a register with out @*/
+    {
+        printf("error: invalid register usage, missing unary operator - @ <%s> [line %d]\n", str, linec);
+        err = TRUE;
+        return FALSE;
+    }
+    return FALSE; /*otherwise, no @ operator and not a register.*/
 }
 /*the following function checks if the arguments of the given cmd are valid.
 if so, the number of "words" = addresses needed for storage is returned.
@@ -163,7 +184,7 @@ int cmd_operand_check(command id, data_t node)
         err = TRUE;
         return 0;
     }
-    if (node.narg < cmd_num_op[id])
+    if ((node.narg < cmd_num_op[id]) && (node.narg >= 0))
     {
         printf("error: too few operands for <%s> [line %d]\n", node.cmd, linec);
         err = TRUE;
@@ -173,18 +194,33 @@ int cmd_operand_check(command id, data_t node)
     {
         /*src hash method = 1,3,5. dec hash method = 1,3,5*/
     case (CMP):
-        if (((is_register(arg[0])) != -1) && ((is_register(arg[1])) != -1)) /*check if both of the arguments are registers.*/
-            return 1;                                                       /*return 1 as the needed space in memory, two registers in one machine "word".*/
-
+        if ((is_register(*arg)) && (is_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
+            return 1;                                         /*return 1 as the needed space in memory, two registers in one machine "word".*/
+        break;
         /*src hash method = 1,3,5. dec hash method = 3,5*/
     case (MOV):
     case (ADD):
     case (SUB):
-        if (((is_register(arg[0])) != -1) && ((is_register(arg[1])) != -1)) /*check if both of the arguments are registers.*/
-            return 1;                                                       /*return 1 as the needed space in memory, two registers in one machine "word".*/
+        printf("<%s----%s>\n", *arg, *(arg + 1));
+        if ((is_register(*arg)) && (is_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
+        {
+            puts("blat");
+            return 1;
+        } /*return 1 as the needed space in memory, two registers in one machine "word".*/
+        break;
         /*src hash method = 3. dec hash method = 3,5*/
     case (LEA):
-        /* code */
+        if ((**arg == '@') && (register_id(*arg + 1)))
+        {
+            printf("error: unsupported source hashing method <%s> [line %d]\n", *arg, linec);
+            err = TRUE;
+        }
+        if ((register_id(*arg)) >= 0)
+        {
+            printf("error: lea - register as a source is unsupported <%s> [line %d]\n", *arg, linec);
+            err = TRUE;
+        }
+        is_register(*(arg + 1));
         break;
         /*src hash method = NONE. dec hash method = 3,5*/
     case (NOT):
@@ -195,11 +231,11 @@ int cmd_operand_check(command id, data_t node)
     case (BNE):
     case (RED):
     case (JSR):
-        /* code */
+        is_register(*arg);
         break;
-        /*src hash method = NONE. dec hash method = 1,3,5*/
+    /*src hash method = NONE. dec hash method = 1,3,5*/
     case (PRN):
-        /* code */
+        is_register(*arg);
         break;
         /*no operands.*/
     case (RTS):

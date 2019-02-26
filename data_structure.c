@@ -7,7 +7,7 @@ const char ins_string[4][8] = {".data", ".string", ".entry", ".extern"};
 /*array of strings with known commands names as defined is the assignment, to be compared using strcmp with input cmd from user.*/
 const char cmd_string[16][5] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
 /*array of the system's registers.*/
-const char registers[8][4] = {"@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"};
+const char registers[8][4] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
 /*following function frees an dynamically allocated array of strings.
 arguments are pointer to an array of strings, and size of the array (number of strings stored).*/
 static void free_CSV_arg(char ***arg_mat, int arg_num)

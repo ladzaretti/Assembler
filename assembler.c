@@ -70,7 +70,6 @@ int main(int argc, char **argv)
                     if (pdata->cmd)          /*if there is a word other then a label.*/
                     {
                         ln_type = identify_line_type(pdata->cmd); /*get line type.*/
-                        /*printf("<%s> err = %d\n", temp, err);*/
                         /*the following switch cases will be executed only if there is a valid cmd/ins line. 
                         otherwise defualt case will be executed.*/
                         switch (ln_type)
@@ -93,12 +92,13 @@ int main(int argc, char **argv)
                                     printf("error: <%s> - label already exists [line %d]\n", pdata->label, linec); /*if found, print error.*/
                             }
                             /*calculate L. ->  = cmd_operand_check*/
-                            IC += 1 + cmd_operand_check(id, *pdata); /* IC<-L+IC increase IC by number of memory words + one words for the instruction itself.*/
+                            if (pdata->narg >= 0) /*no arg error*/
+                                IC += 1 + cmd_operand_check(id, *pdata); /* IC<-L+IC increase IC by number of memory words + one words for the instruction itself.*/
                             break;
                         case (INS_LINE):                                                     /*instruction line.*/
                             if (((id = ins_identify(pdata->cmd)) == STRING) || (id == DATA)) /*check if the given line is a data declaration.*/
                             {
-                                if (pdata->label)
+                                if (pdata->label) /*if there is label, insert it into the symbol table.*/
                                 {
                                     symbol_t *psymbol = NULL;                        /*new symbol node.*/
                                     if (!(search_label(&symbol_list, pdata->label))) /*check if exists in symbol table.*/
@@ -116,17 +116,17 @@ int main(int argc, char **argv)
                                 if (id == DATA)
                                 {
                                     char **arg;
-                                    int num;          /*in this context, num is a dummy variable for use in get_num.
+                                    int num;                   /*in this context, num is a dummy variable for use in get_num.
                                     in the second scan, it will contain the interger extracted. */
-                                    arg = pdata->arg; /*cast by pointer to get the data field*/
-                                    if (!(pdata->narg))
+                                    arg = (char **)pdata->arg; /*cast by pointer to get the data field*/
+                                    if (!(pdata->narg))        /*check if arguments exists.*/
                                     {
                                         printf("error: uninitilaied .data variable [line %d]\n", linec);
                                         err = TRUE;
-                                    }                                 /*if found, print error.*/
+                                    }
                                     for (i = 0; i < pdata->narg; i++) /*check and count integer arguments.*/
-                                        if (get_num(arg[i], &num))
-                                            DC++; /*if valid, inc DC.*/
+                                        if (get_num(arg[i], &num))    /*if arg is an integer*/
+                                            DC++;                     /*if valid, inc DC.*/
                                         else
                                         {
                                             printf("error: <%s> - is not an integer [line %d]\n", arg[i], linec); /*if found, print error.*/
@@ -136,16 +136,14 @@ int main(int argc, char **argv)
                                 if (id == STRING)
                                 {
                                     char **arg;
-                                    arg = pdata->arg;      /*cast by pointer to get the data field*/
-                                    if ((pdata->narg) > 0) /*check string for errors*/
+                                    arg = (char **)pdata->arg; /*cast by pointer to get the data field*/
+                                    if ((pdata->narg) > 0)     /*check string for errors*/
                                     {
                                         check_string(arg);
-                                        DC += strlen(*arg) + 1; /*addvance DC by the lenght of the given string + null.*/
+                                        DC += strlen(*arg) + 1; /*addvance DC by the length of the given string + null.*/
                                     }
                                     else
-                                    {
                                         printf("error: uninitilaied .string variable [line %d]\n", linec);
-                                    }
                                 }
                             }
                             if (id == EXTERN)
@@ -157,7 +155,7 @@ int main(int argc, char **argv)
                                 /**/
                                 for (; i < pdata->narg; i++)
                                 {
-                                    arg = (pdata->arg) + i;
+                                    arg = (char **)((pdata->arg) + i);
                                     if (search_label(&symbol_list, *arg))
                                     {
                                         printf("error: <%s> - label already exists [line %d]\n", *arg, linec);
@@ -166,10 +164,9 @@ int main(int argc, char **argv)
                                     list_enqueue(&symbol_list, psymbol = create_symbol_node(*arg)); /*create and enqueue symbol node with given label.*/
                                     psymbol->command = FALSE;                                       /*mark as code.*/
                                     psymbol->address = 0;                                           /*set address as zero*/
-                                    psymbol->external = TRUE;
-                                } /*set external as true.*/
+                                    psymbol->external = TRUE;                                       /*set external as true.*/
+                                }
                             }
-                            /*printf("ins id = <%s>\n", id >= 0 ? ins_string[id] : "-1");*/
                             break;
                         default:
                             /*line not an instruction nor a command.*/
@@ -177,21 +174,22 @@ int main(int argc, char **argv)
                         } /*end of switch.*/
                     }
                 } /*end of symbol table creation block.*/
-                /*update address in symbol list according to IC. add IC-100+1 to all addresses where external = FALSE*/
+                /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
                 free(temp); /*free current line string.*/
                 linec++;
             } /*end of input stream.*/
             {
-                ptr h = symbol_list.head;
-                symbol_t *sym;
-                while (h)
+                ptr h = symbol_list.head; /*get list head*/
+                symbol_t *sym;            /*pointer to the data field*/
+                while (h)                 /*scan symbol table and update DC addresses by adding IC.*/
                 {
                     sym = h->data;
-                    h = (h)->next;
+                    h = h->next;
                     if ((sym->external == FALSE) && (sym->command == FALSE))
                         sym->address += IC;
                 }
             }
+            printf("error = %s\n", err == TRUE ? "TRUE" : "FALSE");
             list_print(symbol_list, SYMBOL_T); /*print symbol table*/
             list_print(list, DATA_T);          /*print list*/
             list_free(&symbol_list, SYMBOL_T); /*free symbol table.*/
