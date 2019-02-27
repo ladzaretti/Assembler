@@ -65,7 +65,7 @@ returns the id or -1 if not supported.*/
 int ins_identify(char *ins)
 {
     int i = 0;                                                          /*counter used in the for loop.*/
-    instruction ins_enum_id;                                            /*variable of type instruction, each and every entry in the given enum is coordinated with the corresponding string in ins_string.*/
+    symbol_type ins_enum_id;                                            /*variable of type instruction, each and every entry in the given enum is coordinated with the corresponding string in ins_string.*/
     for (ins_enum_id = DATA; ins_enum_id <= EXTERN; ins_enum_id++, i++) /*loop thought enum list.*/
     {
         if (!strcmp(ins, ins_string[i])) /*compare given string to each and every ins_string entry*/
@@ -154,7 +154,6 @@ int register_id(char *str)
 output is FALSE if usage is invalid. otherwise TRUE.*/
 int is_register(char *str)
 {
-    puts(str);
     if ((str[0] == '@') && ((register_id(str + 1)) >= 0)) /*@'s unary operand is a register*/
         return TRUE;
     if ((str[0] == '@') && ((register_id(str + 1)) == -1)) /*@"s operand isnt a register*/
@@ -201,10 +200,8 @@ int cmd_operand_check(command id, data_t node)
     case (MOV):
     case (ADD):
     case (SUB):
-        printf("<%s----%s>\n", *arg, *(arg + 1));
         if ((is_register(*arg)) && (is_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
         {
-            puts("blat");
             return 1;
         } /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
@@ -275,4 +272,32 @@ int check_string(char **str)
     *(*str + strlen(p) - 1) = 0;     /*terminate string at closing bracket.*/
     free(p);                         /*free temp string pointer.*/
     return 1;
+}
+int is_comment(char **line, int *ln_cnt)
+{
+    if (*line[0] == ';') /*check if the given line is a comment.*/
+    {
+        (*ln_cnt)++;
+        free(*line);
+        return TRUE;
+    }
+    return FALSE;
+}
+int check_line_label(data_t **pdata, char **line_st, int *l_cnt)
+{
+    int ign_label = ignore_label(**pdata); /*get label status. 1 = line has label only, 2 = ext/ent with label, 0 = label is valid.*/
+    if (ign_label == 1)                    /*free current node, as its being ignored. line has label only.*/
+    {
+        free((*pdata)->label); /*free label string*/
+        free(*line_st);        /*free current line string.*/
+        free(*pdata);          /*free node*/
+        (*l_cnt)++;
+        return FALSE; /*return false as the line is being ignored.*/
+    }
+    if (ign_label == 2) /*line contains entry/extern and a label.*/
+    {
+        free((*pdata)->label);  /*ignore label.*/
+        (*pdata)->label = NULL; /*set label ptr to null.*/
+    }
+    return TRUE; /*line is valid*/
 }

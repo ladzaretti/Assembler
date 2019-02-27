@@ -2,6 +2,8 @@
     "files.associations": {
         "stdlib.h": "c",
         "database.h": "c",
-        "err_check.h": "c"
+        "err_check.h": "c",
+        "data_handle.h": "c",
+        "error_handle.h": "c"
     }
 }

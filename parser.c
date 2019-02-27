@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "database.h"
-#include "err_check.h"
+#include "error_handle.h"
 #define COMMA "," /*comma macro for future use with strtok: geting arguments tokens*/
 /*some functions (might have been slightly modified) are reused from assignment 22*/
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
@@ -196,13 +196,13 @@ int check_missing_comma(char *str)
     int i = 0, dig_alpha_seq = 0, wspace_seq = 0;
     for (; i < strlen(str); i++) /*cycle thought given string*/
     {
-        if ((isalpha(*(str + i))) || (isdigit(*(str + i))))                                 /*search for (digit+alpha)^+*/
-            dig_alpha_seq = 1;                                                              /*if so, then flag == true*/
-        else if ((!isalpha(*(str + i))) && (*(str + i) != ' ') && (!(isdigit(*(str + i))))) /* if next char isnt alpha/space/digit -> reset*/
+        if ((isalpha(*(str + i))) || (isdigit(*(str + i))) || ((*(str + i)) == '@') || ((*(str + i)) == '-')) /*search for (digit+alpha+@+-)^+*/
+            dig_alpha_seq = 1;                                                                                /*if so, then flag == true*/
+        else if ((!isalpha(*(str + i))) && (*(str + i) != ' ') && (!(isdigit(*(str + i)))))                   /* if next char isnt alpha/space/digit -> reset*/
             dig_alpha_seq = wspace_seq = 0;
         if ((*(str + i) == ' ') && (dig_alpha_seq)) /*if current char is space and previous seq is (digit+alpha)^+ than wspace flag is true*/
             wspace_seq = 1;
-        /*if previous seq is (digit+alpha)^+(space+tab)^+ and current char is (digit+alpha) than the desired seq is found -> return true*/
+        /*if previous seq is (digit+alpha+@+-)^+(space+tab)^+ and current char is (digit+alpha) than the desired seq is found -> return true*/
         if ((dig_alpha_seq) && (wspace_seq) && ((isalpha(*(str + i))) || (isdigit(*(str + i)))))
             return 1;
     }
@@ -234,7 +234,7 @@ int get_CSV_arg(char **data, char ***arg_mat)
     else if (*(*data + strlen(*data) - 1) == ',') /*check if the last char is a comma*/
         return -3;                                /*return error code*/
     remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
-    token = strtok(*data, COMMA); /*get first token*/
+    token = strtok(*data, COMMA);                 /*get first token*/
     while (token != NULL)
     {
         i++;

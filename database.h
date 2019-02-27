@@ -40,8 +40,9 @@ typedef enum
     DATA = 0,
     STRING = 1,
     ENTRY = 2,
-    EXTERN = 3
-} instruction;
+    EXTERN = 3,
+    COM = 4
+} symbol_type;
 /*list of differant linked list data types.*/
 enum node_type
 {

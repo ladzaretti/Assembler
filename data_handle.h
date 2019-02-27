@@ -1,5 +1,5 @@
-#ifndef DATA_STRUCTURE_h
-#define DATA_STRUCTURE_h
+#ifndef DATA_HANDLE_h
+#define DATA_HANDLE_h
 #include "database.h"
 /*print a list with given data type. the arguments are list and data type.*/
 void list_print(list_t, int);
@@ -19,4 +19,8 @@ symbol_t *create_symbol_node(char *);
 /*this function receives a pointer to a list and a label to search in the given list.
 if the label exists, its node address is return to the caller. otherwise NULL is returned.*/
 symbol_t *search_label(list_t *, char *);
+void sym_table_insert(list_t *, data_t, symbol_type);
+void update_DC(data_t, symbol_type);
+void build_symbol(list_t *, data_t *);
+void symbol_table_add_IC(list_t *);
 #endif

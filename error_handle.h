@@ -1,5 +1,6 @@
-#ifndef ERR_CHECK_H
-#define ERR_CHECK_H
+#ifndef ERROR_HANDLE_H
+#define ERROR_HANDLE_H
+void initilize_list(list_t *);
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
 int err_invalid_cms(int);
@@ -41,4 +42,6 @@ function input is an adress of pointer to string.
 output 0 - string invalid.
        1 - string is valid.  */
 int check_string(char **);
+int check_line_label(data_t **, char **, int *);
+int is_comment(char **, int *);
 #endif
