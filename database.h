@@ -9,8 +9,9 @@
 extern const char cmd_string[16][5];
 extern const char ins_string[4][8];
 extern const char registers[8][4];
-extern int linec; /*read line counter.*/
-extern int err;   /*global error flag*/
+extern char *file_name;
+extern int ln_cnt; /*read line counter.*/
+extern int err;    /*global error flag*/
 extern int IC;
 extern int DC;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.

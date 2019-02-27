@@ -193,6 +193,11 @@ symbol_t *search_label(list_t *sym_t, char *label)
     }
     return NULL; /*not found, return NULL.*/
 }
+/*the following function inserts into the given symbol table the given data by its type - command, data, string or extern.
+inputs  - symbol table address represented by a linked list
+        - data_t node by value.
+        - symbol_type as the "word" type.
+this function returns none. */
 void sym_table_insert(list_t *sym_table, data_t data, symbol_type type)
 {
     symbol_t *psymbol = NULL; /*new symbol node.*/
@@ -223,7 +228,7 @@ void sym_table_insert(list_t *sym_table, data_t data, symbol_type type)
             arg = (char **)((data.arg) + i);
             if (search_label(sym_table, *arg))
             {
-                printf("error: <%s> - label already exists [line %d]\n", *arg, linec);
+                printf("error: <%s> - label already exists [line %d]\n", *arg, ln_cnt);
                 err = TRUE;
             }                                                            /*if found, print error.*/
             list_enqueue(sym_table, psymbol = create_symbol_node(*arg)); /*create and enqueue symbol node with given label.*/
@@ -237,6 +242,10 @@ void sym_table_insert(list_t *sym_table, data_t data, symbol_type type)
         break;
     }
 }
+/*the following function updates data counter according the size of the data given.
+DC is updated by the size of .data array, or by the length of the .string.
+input : - data_t as the data extracted from the current line.
+        - symbol_type enum that describes the given data type -> .data/.string*/
 void update_DC(data_t data, symbol_type id)
 {
     int i;
@@ -248,7 +257,7 @@ void update_DC(data_t data, symbol_type id)
         arg = (char **)data.arg; /*cast by pointer to get the data field*/
         if (!(data.narg))        /*check if arguments exists.*/
         {
-            printf("error: uninitilaied .data variable [line %d]\n", linec);
+            printf("error: uninitilaied .data variable [line %d]\n", ln_cnt);
             err = TRUE;
         }
         for (i = 0; i < data.narg; i++) /*check and count integer arguments.*/
@@ -256,7 +265,7 @@ void update_DC(data_t data, symbol_type id)
                 DC++;                   /*if valid, inc DC.*/
             else
             {
-                printf("error: <%s> - is not an integer [line %d]\n", arg[i], linec); /*if found, print error.*/
+                printf("error: <%s> - is not an integer [line %d]\n", arg[i], ln_cnt); /*if found, print error.*/
                 err = TRUE;
             }
     }
@@ -270,11 +279,20 @@ void update_DC(data_t data, symbol_type id)
             DC += strlen(*arg) + 1; /*addvance DC by the length of the given string + null.*/
         }
         else
-            printf("error: uninitilaied .string variable [line %d]\n", linec);
+            printf("error: uninitilaied .string variable [line %d]\n", ln_cnt);
     }
 }
+/*the following function builds a symbol entry by the given data.
+the data is analyezed for its type -> instruction or command line.
+then checked for errors, or if exists in the table. 
+if the given data is valid, sym_table_insert is used to enqueue with the corresponding parameters.
+input:  - the address of the symbol list
+        - the address of the data_t as extracted from the current line.
+output = none*/
 void build_symbol(list_t *symbol_list, data_t *pdata)
 {
+    /*the following switch cases will be executed only if there is a valid cmd/ins line. 
+                        otherwise defualt case will be executed.*/
     switch (identify_line_type(pdata->cmd)) /*switch on line type.*/
     {
         int id;
@@ -284,7 +302,7 @@ void build_symbol(list_t *symbol_list, data_t *pdata)
             if (!(search_label(symbol_list, pdata->label))) /*check if label exists in symbol table.*/
                 sym_table_insert(symbol_list, *pdata, COM); /*insert into symbol table. as code*/
             else
-                printf("error: <%s> - label already exists [line %d]\n", pdata->label, linec); /*if found, print error.*/
+                printf("error: <%s> - label already exists [line %d]\n", pdata->label, ln_cnt); /*if found, print error.*/
         }
         /*calculate L. ->  = cmd_operand_check*/
         if (pdata->narg >= 0)                                              /*no arg error*/
@@ -298,7 +316,7 @@ void build_symbol(list_t *symbol_list, data_t *pdata)
                 if (!(search_label(symbol_list, pdata->label))) /*check if exists in symbol table.*/
                     sym_table_insert(symbol_list, *pdata, id);  /*insert into symbol table. mark as non code*/
                 else
-                    printf("error: <%s> - label already exists [line %d]\n", pdata->label, linec); /*if found, print error.*/
+                    printf("error: <%s> - label already exists [line %d]\n", pdata->label, ln_cnt); /*if found, print error.*/
             }
             /*update DC*/
             update_DC(*pdata, ins_identify(pdata->cmd));
@@ -311,7 +329,10 @@ void build_symbol(list_t *symbol_list, data_t *pdata)
         break;
     } /*end of switch.*/
 }
-
+/*the following function updates the given data entries 
+with the final IC count.
+input   - address of the symbol list
+output  - none*/
 void symbol_table_add_IC(list_t *symbol_list)
 {
     ptr h = symbol_list->head; /*get list head*/
@@ -324,6 +345,8 @@ void symbol_table_add_IC(list_t *symbol_list)
             sym->address += IC;
     }
 }
+/*initilize linked list with NULL.
+input - address of a list.*/
 void initilize_list(list_t *list)
 {
     list->head = NULL; /*terminate the empty list*/

@@ -329,11 +329,11 @@ data_t *get_data(char **src)
     }
     if ((node->cmd) && (!(strcmp(node->cmd, ".string")))) /*cmd field isnt NULL and of .string type.*/
     {
-        if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
-            node->narg = get_string_arg(src, &(node->arg));
+        if (strlen(*src))                                               /*if the reminder (=arguments) is non empty.*/
+            error_hndl(node->narg = get_string_arg(src, &(node->arg))); /*get string and check arguments list for comma specific errors.*/
     }
-    else if (strlen(*src)) /*if the reminder (=arguments) is non empty.*/
-        node->narg = get_CSV_arg(src, &(node->arg));
+    else if (strlen(*src))                                       /*if the reminder (=arguments) is non empty.*/
+        error_hndl(node->narg = get_CSV_arg(src, &(node->arg))); /*get arguments and check arguments list for comma specific errors.*/
     return node;
 }
 /*the following function receives a string representing an integer number.

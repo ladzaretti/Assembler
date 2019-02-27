@@ -1,9 +1,8 @@
 #ifndef ERROR_HANDLE_H
 #define ERROR_HANDLE_H
-void initilize_list(list_t *);
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
-int err_invalid_cms(int);
+int error_hndl(int);
 /*this function takes a string as arguments and compares it to a list of values (strings) in cmd_string.
 the index of every such string is according to its ID as defined in the enum command list in complex header.
 if exists, the id of the cmd is return, otherwise -1.*/
@@ -42,6 +41,21 @@ function input is an adress of pointer to string.
 output 0 - string invalid.
        1 - string is valid.  */
 int check_string(char **);
+/*the following function checks if the given line contains a redundent lable, 
+i.e label combined with extern or an entry, or label only.
+the line or the label is ignored and freed with accordance to the data given.
+input   - data_t address
+        - string address containing the extracted line
+        - address of the line counter
+output  - FALSE if line was dropped
+        - FRUE if the lines is to be stored.
+*/
 int check_line_label(data_t **, char **, int *);
+/*the following function checks if the given line string is a comment.
+if so, the string is freed from memory and the line counter is increased.
+input   - the address of the line string
+        - the address of the line counter
+output  - TRUE if the given line is a comment
+        - FALSE otherwise.*/
 int is_comment(char **, int *);
 #endif
