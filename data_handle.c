@@ -106,7 +106,7 @@ void list_push(list_t *list, void *data)
     nnode->data = data;                               /*save data in node.*/
     if (!nnode)                                       /*check allocation.*/
     {
-        puts("allocation failed");
+        error_hndl(ALC_FAILED);
         return;
     }
     if (!list->head) /*if list is empty.*/
@@ -132,7 +132,7 @@ void list_enqueue(list_t *list, void *data)
     nnode->data = data;
     if (!nnode)
     {
-        puts("allocation failed");
+        error_hndl(ALC_FAILED);
         return;
     }
     if (!list->tail) /*list is empty*/
@@ -160,7 +160,7 @@ symbol_t *create_symbol_node(char *label)
         node->label = (char *)malloc(strlen(label) + 1); /*allocate space in symbol obj for the given label.*/
         if (!node->label)
         {
-            printf("allocation failed.\n");
+            error_hndl(ALC_FAILED);
             return NULL;
         }
         strcpy(node->label, label); /*copy the label into the symbol obj.*/
@@ -170,7 +170,7 @@ symbol_t *create_symbol_node(char *label)
     }
     else
     {
-        printf("allocation failed.\n");
+        error_hndl(ALC_FAILED);
         return NULL;
     }
     return node;
@@ -184,12 +184,8 @@ symbol_t *search_label(list_t *sym_t, char *label)
     {
         symbol_t *p = (symbol_t *)h->data; /*set pointer to the data field of the list (cast by pointer).*/
         if (!(strcmp(p->label, label)))    /*if label found in symbol list*/
-        {
-            err = TRUE; /*set error flag to TRUE.*/
-            return p;   /*return node containing the label.*/
-        }               /*did my best to minimize arrow code.*/
-
-        h = h->next; /*procced to the next node.*/
+            return p;                      /*return node containing the label.*/
+        h = h->next;                       /*procced to the next node.*/
     }
     return NULL; /*not found, return NULL.*/
 }
@@ -227,10 +223,7 @@ void sym_table_insert(list_t *sym_table, data_t data, symbol_type type)
         {
             arg = (char **)((data.arg) + i);
             if (search_label(sym_table, *arg))
-            {
-                printf("error: <%s> - label already exists [line %d]\n", *arg, ln_cnt);
-                err = TRUE;
-            }                                                            /*if found, print error.*/
+                error_hndl(LABEL_EXISTS);                                /*if found, print error.*/
             list_enqueue(sym_table, psymbol = create_symbol_node(*arg)); /*create and enqueue symbol node with given label.*/
             psymbol->command = FALSE;                                    /*mark as code.*/
             psymbol->address = 0;                                        /*set address as zero*/
@@ -256,18 +249,12 @@ void update_DC(data_t data, symbol_type id)
                                     in the second scan, it will contain the interger extracted. */
         arg = (char **)data.arg; /*cast by pointer to get the data field*/
         if (!(data.narg))        /*check if arguments exists.*/
-        {
-            printf("error: uninitilaied .data variable [line %d]\n", ln_cnt);
-            err = TRUE;
-        }
+            error_hndl(UNINITILIZED_DATA);
         for (i = 0; i < data.narg; i++) /*check and count integer arguments.*/
             if (get_num(arg[i], &num))  /*if arg is an integer*/
                 DC++;                   /*if valid, inc DC.*/
             else
-            {
-                printf("error: <%s> - is not an integer [line %d]\n", arg[i], ln_cnt); /*if found, print error.*/
-                err = TRUE;
-            }
+                error_hndl(NON_INT); /*var isnt int*/
     }
     if (id == STRING)
     {
@@ -279,7 +266,7 @@ void update_DC(data_t data, symbol_type id)
             DC += strlen(*arg) + 1; /*addvance DC by the length of the given string + null.*/
         }
         else
-            printf("error: uninitilaied .string variable [line %d]\n", ln_cnt);
+            error_hndl(UNINITILIZED_STRING);
     }
 }
 /*the following function builds a symbol entry by the given data.
@@ -302,7 +289,7 @@ void build_symbol(list_t *symbol_list, data_t *pdata)
             if (!(search_label(symbol_list, pdata->label))) /*check if label exists in symbol table.*/
                 sym_table_insert(symbol_list, *pdata, COM); /*insert into symbol table. as code*/
             else
-                printf("error: <%s> - label already exists [line %d]\n", pdata->label, ln_cnt); /*if found, print error.*/
+                error_hndl(LABEL_EXISTS); /*if found, print error.*/
         }
         /*calculate L. ->  = cmd_operand_check*/
         if (pdata->narg >= 0)                                              /*no arg error*/
@@ -316,7 +303,7 @@ void build_symbol(list_t *symbol_list, data_t *pdata)
                 if (!(search_label(symbol_list, pdata->label))) /*check if exists in symbol table.*/
                     sym_table_insert(symbol_list, *pdata, id);  /*insert into symbol table. mark as non code*/
                 else
-                    printf("error: <%s> - label already exists [line %d]\n", pdata->label, ln_cnt); /*if found, print error.*/
+                    error_hndl(LABEL_EXISTS); /*if found, print error.*/
             }
             /*update DC*/
             update_DC(*pdata, ins_identify(pdata->cmd));

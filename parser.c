@@ -17,7 +17,7 @@ char *path_fname_extract(char *Fpath)
         temp = (char *)realloc(fname, sizeof(char) * i);
         if (!temp) /*check if allocation was successful*/
         {
-            puts("allocation failed");
+            error_hndl(ALC_FAILED);
             return NULL;
         }
         else
@@ -29,7 +29,7 @@ char *path_fname_extract(char *Fpath)
     }
     temp = (char *)realloc(fname, sizeof(char) * i); /*reallocated space for string termination*/
     if (!temp)
-        puts("allocation failed");
+        error_hndl(ALC_FAILED);
     else
     {
         fname = temp;
@@ -45,7 +45,7 @@ void remove_wspaces(char **str)
     temp_str = (char *)malloc(strlen(*str) + 1); /*cpy str to avoid src-dest overlap in strcpy inside the while loop*/
     if (!temp_str)
     {
-        puts("allocation failed");
+        error_hndl(ALC_FAILED);
         return;
     }
     strcpy(temp_str, *str);  /*copy given string.*/
@@ -69,7 +69,7 @@ void remove_leading_wspaces(char **str)
     temp_str = (char *)malloc(strlen(*str) + 1); /*cpy str to avoid src-dest overlap in strcpy inside the while loop*/
     if (!temp_str)
     {
-        puts("allocation failed");
+        error_hndl(ALC_FAILED);
         return;
     }
     strcpy(temp_str, *str);                               /*copy given string.*/
@@ -118,7 +118,7 @@ int fget_line(char **str, FILE *stream)
         temp = (char *)realloc(*str, sizeof(char) * i); /*allocate one more chunk of memory of size char*/
         if (!temp)
         {
-            puts("allocation failed");
+            error_hndl(ALC_FAILED);
             return 0;
         }
         else
@@ -131,7 +131,7 @@ int fget_line(char **str, FILE *stream)
     /*finished copying line (if there is still data, it will be extracted in the next iteration. will reach EOF eventually)*/
     temp = (char *)realloc(*str, sizeof(char) * i); /*reallocated space for string termination*/
     if (!temp)
-        puts("allocation failed");
+        error_hndl(ALC_FAILED);
     else
     {
         *str = temp;
@@ -162,7 +162,7 @@ char *get_nxt_word(char **src)
         temp = (char *)realloc(cmd, sizeof(char) * j); /*same allocation as in the previous function.*/
         if (temp == NULL)
         {
-            printf("Allocation Failed\n");
+            error_hndl(ALC_FAILED);
             return NULL;
         }
         else
@@ -178,7 +178,7 @@ char *get_nxt_word(char **src)
     temp = (char *)realloc(cmd, sizeof(char) * j); /*terminate cmd with null.*/
     if (temp == NULL)
     {
-        printf("Allocation Failed\n");
+        error_hndl(ALC_FAILED);
         return NULL;
     }
     else
@@ -215,24 +215,24 @@ in which the array elements are the arguments in chronological order (by index) 
 the function's arguments are pointer to the raw data string, pointer to an empty char matrix.
 the function returns an error code if encountered any, otherwise stores the arguments in a dynamically allocated array of strings and returns the number of arguments extracted.*/
 int get_CSV_arg(char **data, char ***arg_mat)
-/*return values:    -1 = Illegal comma
-                    -2 = Multiple consecutive commas
-                    -3 = Extraneous text after end of command (comma specific)
-                    -4 = allocation failed
-                    -5 = missing comma between parameters*/
+/*return values:    ILLEGAL_COMMA = Illegal comma
+                    CON_COMMA = Multiple consecutive commas
+                    EXT_TEXT = Extraneous text after end of command (comma specific)
+                    ALC_FAILED = allocation failed
+                    MIS_COMMA = missing comma between parameters*/
 {
     char *token = NULL; /**/
     char **temp = NULL;
     int i = 0; /*arguments counter*/
     remove_leading_wspaces(data);
     if (check_missing_comma(*data)) /*check for missing comma.*/
-        return -5;
+        return MIS_COMMA;
     if (**data == ',')                            /* check if the first char in the striped string is a comma*/
-        return -1;                                /*return proper error code*/
+        return ILLEGAL_COMMA;                     /*return proper error code*/
     else if (strstr(*data, ",,"))                 /*search for consecutive of commas*/
-        return -2;                                /*if found, return proper code*/
+        return CON_COMMA;                         /*if found, return proper code*/
     else if (*(*data + strlen(*data) - 1) == ',') /*check if the last char is a comma*/
-        return -3;                                /*return error code*/
+        return EXT_TEXT;                          /*return error code*/
     remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
     token = strtok(*data, COMMA);                 /*get first token*/
     while (token != NULL)
@@ -241,8 +241,8 @@ int get_CSV_arg(char **data, char ***arg_mat)
         temp = (char **)realloc(*arg_mat, sizeof(char *) * i); /*reallocate new block of memory for a pointer to a string*/
         if (temp == NULL)                                      /*check if allocation was successful*/
         {
-            printf("Allocation Failed\n");
-            return -4; /*return error if allocation failed*/
+            error_hndl(ALC_FAILED);
+            return ALC_FAILED; /*return error if allocation failed*/
         }
         else
         {
@@ -260,21 +260,21 @@ in which the array elements are the arguments in chronological order (by index) 
 the function's arguments are pointer to the raw data string, pointer to an empty char matrix.
 the function returns an error code if encountered any, otherwise stores the arguments in a dynamically allocated array of strings and returns the number of arguments extracted.*/
 int get_string_arg(char **data, char ***arg_mat)
-/*return values:    -1 = Illegal comma
-                    -3 = Extraneous text after end of command (comma specific)
-                    -4 = allocation failed*/
+/*return values:    ILLEGAL_COMMA = Illegal comma
+                    EXT_TEXT = Extraneous text after end of command (comma specific)
+                    ALC_FAILED = allocation failed*/
 {
     char **temp = NULL;
     if (**data == ',')                                 /* check if the first char in the striped string is a comma*/
-        return -1;                                     /*return proper error code*/
+        return ILLEGAL_COMMA;                          /*return proper error code*/
     if (*(*data + strlen(*data) - 1) == ',')           /*check if the last char is a comma*/
-        return -3;                                     /*return error code*/
+        return EXT_TEXT;                               /*return error code*/
     remove_leading_wspaces(data);                      /*remove white spaces from arguments prior phrasing.*/
     temp = (char **)realloc(*arg_mat, sizeof(char *)); /*reallocate new block of memory for a pointer to a string*/
     if (temp == NULL)                                  /*check if allocation was successful*/
     {
-        printf("Allocation Failed\n");
-        return -4; /*return error if allocation failed*/
+        error_hndl(ALC_FAILED);
+        return ALC_FAILED; /*return error if allocation failed*/
     }
     else
     {
@@ -299,7 +299,7 @@ data_t *get_data(char **src)
     }
     if (!node)
     {
-        printf("allocation failed.\n");
+        error_hndl(ALC_FAILED);
         return NULL;
     }
     if (cmd[strlen(cmd) - 1] == ':') /*check of the first word is a label.*/
@@ -307,7 +307,7 @@ data_t *get_data(char **src)
         node->label = (char *)malloc(strlen(cmd)); /*allocate space in data obj for the given label.*/
         if (!node->label)
         {
-            printf("allocation failed.\n");
+            error_hndl(ALC_FAILED);
             return NULL;
         }
         strncpy(node->label, cmd, strlen(cmd)); /*copy the label into the data obj without the null terminator.*/
@@ -321,7 +321,7 @@ data_t *get_data(char **src)
         node->cmd = (char *)malloc(strlen(cmd) + 1); /*allocate space to store as cmd.*/
         if (!node->cmd)
         {
-            printf("allocation failed.\n");
+            error_hndl(ALC_FAILED);
             return NULL;
         }
         strcpy(node->cmd, cmd); /*copy to data_t*/

@@ -1,5 +1,6 @@
 #ifndef DATABASE_H
 #define DATABASE_H
+#include <limits.h>
 #define CMD_LINE 1 /*define command line ID*/
 #define INS_LINE 2 /*define instruction line ID.*/
 #define TRUE 1
@@ -14,6 +15,33 @@ extern int ln_cnt; /*read line counter.*/
 extern int err;    /*global error flag*/
 extern int IC;
 extern int DC;
+typedef enum
+{
+    ILLEGAL_COMMA = SHRT_MIN, /*illegal comma*/
+    CON_COMMA,                /*multiple consecutive commas*/
+    EXT_TEXT,                 /*extraneous text after end of command*/
+    ALC_FAILED,               /*Allocation failed*/
+    MIS_COMMA,                /*missing comma*/
+    UDEF_CMD,                 /*undefined command*/
+    UDEF_INS,                 /*undefined data*/
+    FIRST_CHR_NON_ALPHA,      /*label first char isnt alphabetic*/
+    LABEL_RES_WORD,           /*reserved word is used as a label*/
+    LBL_LONG,                 /*label exceeds max len*/
+    LBL_ILLEGAL_CHAR,         /*label contains illegal char.*/
+    INVALID_REG_USE,          /*missing unary operator - @ on reg*/
+    INVALID_UNARY_OP,         /*invalid @ unary operator's operand*/
+    STR_UNPRINTABLE_CHR,      /*.string contains unprintable char*/
+    STR_MISSING_BRACKET,      /*.string type declatation missing bracket*/
+    TOO_FEW_OPERANDS,         /*too many operands for command*/
+    TOO_MANY_OPERANDS,        /*missing  operands for command*/
+    UNS_REG_SRC,              /*register as a source is unsupported*/
+    UNS_SRC_HASHING,          /*unsupported source hashing method*/
+    LABEL_EXISTS,             /*label already exists*/
+    UNINITILIZED_DATA,        /*uninitilaied .data variable*/
+    UNINITILIZED_STRING,      /*uninitilaied .string variable*/
+    NON_INT                 /*given variable is not an integer*/
+
+} error_list;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
 each record is define explicidly to avoid jumps in value.*/
 typedef enum

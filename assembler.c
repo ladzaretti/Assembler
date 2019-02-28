@@ -7,7 +7,7 @@
 #include "data_handle.h"
 char *file_name = NULL; /* string to contain path filename*/
 int ln_cnt = 1;         /*line counter.*/
-int err;                /*error flag.*/
+int err = FALSE;                /*error flag.*/
 int DC = 0;             /*data counter.*/
 int IC = 100;           /*instruction counter.*/
 int main(int argc, char **argv)

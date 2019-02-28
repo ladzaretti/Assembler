@@ -1,31 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include <ctype.h>
 #include "database.h"
-typedef enum
-{
-    ILLEGAL_COMMA = SHRT_MIN, /*illegal comma*/
-    CON_COMMA,                /*multiple consecutive commas*/
-    EXT_TEXT,                 /*extraneous text after end of command*/
-    ALC_FAILED,               /*Allocation failed*/
-    MIS_COMMA,                /*missing comma*/
-    UDEF_CMD,                 /*undefined command*/
-    UDEF_INS,                 /*undefined data*/
-    FIRST_CHR_NON_ALPHA,      /*label first char isnt alphabetic*/
-    LABEL_RES_WORD,           /*reserved word is used as a label*/
-    LBL_LONG,                 /*label exceeds max len*/
-    LBL_ILLEGAL_CHAR,         /*label contains illegal char.*/
-    INVALID_REG_USE,          /*missing unary operator - @ on reg*/
-    INVALID_UNARY_OP,         /*invalid @ unary operator's operand*/
-    STR_UNPRINTABLE_CHR,      /*.string contains unprintable char*/
-    STR_MISSING_BRACKET,      /*.string type declatation missing bracket*/
-    TOO_FEW_OPERANDS,         /*too many operands for command*/
-    TOO_MANY_OPERANDS,        /*missing  operands for command*/
-    UNS_REG_SRC,              /*register as a source is unsupported*/
-    UNS_SRC_HASHING           /*unsupported source hashing method*/
-} error_list;
+/*macro for printing error messages to stdout, input is a constant string.
+outputs to stdout the given string with the current line and file.*/
+#define print_error(x)                                 \
+    do                                                 \
+    {                                                  \
+        printf("error: ");                             \
+        fputs(x, stdout);                              \
+        printf(" [%s.AS, ln %d]\n", file_name, ln_cnt); \
+    } while (0)
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
 int error_hndl(error_list err_num)
@@ -36,61 +22,96 @@ int error_hndl(error_list err_num)
         switch (err_num)
         {
         case ILLEGAL_COMMA:
-            printf("error: illegal comma [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("illegal_comma");
+            /*printf("error: illegal comma [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case CON_COMMA:
-            printf("error: multiple consecutive commas [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("multiple consecutive commas");
+            /*printf("error: multiple consecutive commas [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case EXT_TEXT:
-            printf("error: extraneous text after end of command [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("extraneous text after end of command");
+            /*printf("error: extraneous text after end of command [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case ALC_FAILED:
-            printf("Allocation failed.\n");
+            printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
             break;
         case MIS_COMMA:
-            printf("error: missing comma [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("missing comma");
+            /*printf("error: missing comma [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UDEF_CMD:
-            printf("error: undefined command name [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("undefined command name");
+            /*printf("error: undefined command name [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UDEF_INS:
-            printf("error: undefined data type [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("undefined data type");
+            /*printf("error: undefined data type [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case FIRST_CHR_NON_ALPHA:
-            printf("error: first character is not alphabetic [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("first character is not alphabetic");
+            /*printf("error: first character is not alphabetic [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LABEL_RES_WORD:
-            printf("error: reserved word as a label [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("reserved word as a label");
+            /*printf("error: reserved word as a label [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LBL_LONG:
-            printf("error: labal execceds maximum length [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("labal execceds maximum length");
+            /*printf("error: labal execceds maximum length [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LBL_ILLEGAL_CHAR:
-            printf("error: labal contains illigal characters [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("labal contains illegal characters");
+            /*printf("error: labal contains illegal characters [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case INVALID_REG_USE:
-            printf("error: invalid register usage, missing unary operator - @ [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("invalid register usage, missing unary operator");
+            /*printf("error: invalid register usage, missing unary operator - @ [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case INVALID_UNARY_OP:
-            printf("error: invalid @ unary operator's operand, expecting register [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("invalid @ unary operator's operand, expecting register");
+            /*printf("error: invalid @ unary operator's operand, expecting register [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case STR_UNPRINTABLE_CHR:
-            printf("error: string contains unprintable characters [%s.AS ln %d]\n", file_name, ln_cnt); /*check for unprintable chars*/
+            print_error("string contains unprintable characters");
+            /*check for unprintable chars*/
+            /*printf("error: string contains unprintable characters [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case STR_MISSING_BRACKET:
-            printf("error: missing brackets in string [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("missing brackets in string");
+            /*printf("error: missing brackets in string [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case TOO_FEW_OPERANDS:
-            printf("error: too few operands for [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("missing operands for given command");
+            /*printf("error: missing operands for given command [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case TOO_MANY_OPERANDS:
-            printf("error: too many operands for [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("too many operands for given command");
+            /*printf("error: too many operands for given command [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UNS_REG_SRC:
-            printf("error: lea - register as a source is unsupported [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("lea - register as a source is unsupported");
+            /*printf("error: lea - register as a source is unsupported [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UNS_SRC_HASHING:
-            printf("error: unsupported source hashing method [%s.AS ln %d]\n", file_name, ln_cnt);
+            print_error("unsupported source hashing method");
+            /*printf("error: unsupported source hashing method [%s.AS ln %d]\n", file_name, ln_cnt);*/
+            break;
+        case LABEL_EXISTS:
+            print_error("label already exists");
+            /*printf("error: label already exists [%s.AS ln %d]\n", file_name, ln_cnt);*/
+            break;
+        case UNINITILIZED_DATA:
+            print_error("uninitilaied .data variable");
+            /*printf("error: uninitilaied .data variable [%s.AS ln %d]\n", file_name, ln_cnt);*/
+            break;
+        case UNINITILIZED_STRING:
+            print_error("uninitilaied .string variable");
+            /*printf("error: uninitilaied .string variable [%s.AS ln %d]\n", file_name, ln_cnt);*/
+            break;
+        case NON_INT:
+            print_error("argument is not an integer");
+            /*printf("error: argument is not an integer [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         }
     }
@@ -175,12 +196,12 @@ int ignore_label(data_t node)
 {
     if ((node.label) && (!node.cmd) && (!node.arg)) /*if the given line has label only, warning is displayed.*/
     {
-        printf("warning: line contains label only - ignored [%s.AS ln %d]\n", file_name, ln_cnt);
+        printf("warning: line contains label only - ignored [%s.AS, ln %d]\n", file_name, ln_cnt);
         return 1; /*line to be ignored.*/
     }
     if ((node.label) && (((strcmp(node.cmd, ".extern") == 0)) || ((strcmp(node.cmd, ".entry")) == 0))) /*if the line is an entry/extern and has a label, warning is displayed.*/
     {
-        printf("warning: label with extern/entry is not supported [%s.AS ln %d]\n", file_name, ln_cnt);
+        printf("warning: label with extern/entry is not supported [%s.AS, ln %d]\n", file_name, ln_cnt);
         return 2; /*label to be ignored.*/
     }
     return 0; /*label is accepted.*/
