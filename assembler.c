@@ -17,23 +17,24 @@ int main(int argc, char **argv)
     {
         FILE *fp;
         if (!(fp = fopen(*argv, "r")))
-            printf("\n%s file does not exists.", *argv);
+            printf("file <%s> does not exist.\n", *argv);
         else
         {
             file_name = path_fname_extract(*argv);
             puts(file_name);
+            /*first scan*/
             initial_scan(&symbol_list, &list, fp);
-        }
-        /*second scan*/
-        printf("DC=%d. IC=%d\n", DC, IC);
-        printf("error = %s\n", error() == TRUE ? "TRUE" : "FALSE");
-        if ((list.tail) && (error() == FALSE))
-        {
-        }
-        list_free(&symbol_list, SYMBOL_T); /*free symbol table.*/
-        list_free(&list, DATA_T);          /*free the data list*/
-        free(file_name);
-        fclose(fp);
-    } /*while (*argv) block.*/
+            /*second scan*/
+            printf("DC=%d. IC=%d\n", DC, IC);
+            printf("error = %s\n", error() == TRUE ? "TRUE" : "FALSE");
+            if ((list.tail) && (error() == FALSE))
+            {
+            }
+            list_free(&symbol_list, SYMBOL_T); /*free symbol table.*/
+            list_free(&list, DATA_T);          /*free the data list*/
+            free(file_name);
+            fclose(fp);
+        } /*scanning block*/
+    }     /*while (*argv) block.*/
     return 0;
 }

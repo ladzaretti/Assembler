@@ -82,7 +82,8 @@ static void print_sym(void *node)
         printf("label=<%s>|", (*p).label);
     printf("address=<%d>|", (*p).address);
     printf("command=<%s>|", (*p).command == 1 ? "true" : "false");
-    printf("external=<%s>\n", (*p).external == 1 ? "true" : "false");
+    printf("external=<%s>|", (*p).external == 1 ? "true" : "false");
+    printf("entry=<%s>\n", (*p).entry == 1 ? "true" : "false");
     puts("__________________________________");
 }
 /*the following function prints the given generic list, the type of the node is passed as an enum entry.

@@ -77,6 +77,7 @@ symbol_t *create_symbol(char *label)
         node->address = 0;          /*initialize node fields to 0.*/
         node->command = FALSE;
         node->external = FALSE;
+        node->entry = FALSE;
     }
     else
     {
@@ -102,6 +103,7 @@ symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
         psymbol->command = TRUE;          /*mark as code.*/
         psymbol->address = IC;            /*update value as current IC*/
         psymbol->external = FALSE;        /*set external as false.*/
+        psymbol->entry = FALSE;
         break;
     case DATA:
     case STRING:
@@ -111,6 +113,7 @@ symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
         psymbol->command = FALSE;  /*insert into symbol table. mark as data*/
         psymbol->address = DC;     /*value is current DC.*/
         psymbol->external = FALSE; /*set external as false.*/
+        psymbol->entry = FALSE;
         break;
     case EXTERN:
     {
@@ -130,6 +133,7 @@ symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
             psymbol->command = FALSE;         /*mark as code.*/
             psymbol->address = 0;             /*set address as zero*/
             psymbol->external = TRUE;         /*set external as true.*/
+            psymbol->entry = FALSE;
         }
     }
     break;
@@ -223,7 +227,7 @@ void build_symbol_type(list_t *symbol_list, data_t *pdata)
                     DC += add;
             }
         }
-        if (id == EXTERN)
+        if ((id == EXTERN) || (id == ENTRY))
             insert_symbol(symbol_list, *pdata, id); /*insert into symbol table with extern mark.*/
         break;
     default:
@@ -245,6 +249,33 @@ void symbol_table_add_IC(list_t *symbol_list)
         h = h->next;
         if ((sym->external == FALSE) && (sym->command == FALSE))
             sym->address += IC;
+    }
+}
+/*run thought parsed linked list and update the entry property in the symbol table accordingly.
+input:  - parsed data linked list
+        - symbol table represented as linked list.
+output: none.*/
+static void update_entry(list_t *list, list_t *symbol_list)
+{
+    node_t *p = list->head; /*head pointer*/
+    while (p)
+    {
+        data_t *data = (data_t *)p->data;
+        char **arg = (char **)data->arg;
+        if (!strcmp(data->cmd, ".entry")) /*update prop if entry*/
+        {
+            int i;
+            for (i = 0; i < data->narg; i++) /*cycle thought all arguments in the given entry line.*/
+            {
+                symbol_t *sym = search_label(symbol_list, *(arg + i));
+                if (sym)
+                    sym->entry = TRUE;
+            }
+        }
+        data = (data_t *)p->next->data;
+        if ((strcmp(data->cmd, ".entry")) && (strcmp(data->cmd, ".extern")))
+            return; /*entry/extern section in the list ended. as they are pushed to the list.*/
+        p = p->next;
     }
 }
 void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
@@ -269,13 +300,17 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
             /*check if the given line label is valid, if ext/ent - label is ignored. if the line has label only the line is ignored.*/
             if (!check_ln_label(&pdata, &temp, &ln_cnt))
                 continue;
-            list_enqueue(list, (void *)pdata);     /*enqueue new data into linked list.*/
+            if (!(strcmp(pdata->cmd, ".extern")) || !(strcmp(pdata->cmd, ".entry")))
+                list_push(list, (void *)pdata);
+            else
+                list_enqueue(list, (void *)pdata); /*enqueue new data into linked list.*/
             build_symbol_type(symbol_list, pdata); /*add to symbol list if valid.*/
         }                                          /*end of symbol table creation block.*/
         free(temp);                                /*free current line string.*/
         ln_cnt++;
-    }                                 /*end of input stream.*/
-    symbol_table_add_IC(symbol_list); /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
+    }                                   /*end of input stream.*/
+    symbol_table_add_IC(symbol_list);   /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
+    update_entry(list, symbol_list);    /*update table on entry property*/
     list_print(*symbol_list, SYMBOL_T); /*print symbol table*/
     list_print(*list, DATA_T);          /*print list*/
 }

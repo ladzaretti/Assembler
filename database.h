@@ -91,8 +91,9 @@ typedef struct symbol
 {
     char *label;
     unsigned int address;
-    unsigned int command;
-    unsigned int external;
+    unsigned int command : 1;
+    unsigned int external : 1;
+    unsigned int entry : 1;
 } symbol_t;
 /*generic double linked list, data fields are changable.*/
 typedef struct node *ptr;

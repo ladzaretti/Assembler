@@ -37,5 +37,6 @@ with the final IC count.
 input   - address of the symbol list
 output  - none*/
 void symbol_table_add_IC(list_t *);
+/**/
 void initial_scan(list_t *symbol_list, list_t *list, FILE *fp);
 #endif
