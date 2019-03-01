@@ -3,20 +3,31 @@
 #include <string.h>
 #include <ctype.h>
 #include "database.h"
+#define IGNORE_LABEL 1
+#define ACCEPT_LABEL 2
+#define IGNORE_LINE 3
+static int err = FALSE; /*error flag*/
 /*macro for printing error messages to stdout, input is a constant string.
 outputs to stdout the given string with the current line and file.*/
-#define print_error(x)                                 \
-    do                                                 \
-    {                                                  \
-        printf("error: ");                             \
-        fputs(x, stdout);                              \
+#define print_error(x)                                  \
+    do                                                  \
+    {                                                   \
+        printf("error: ");                              \
+        fputs(x, stdout);                               \
         printf(" [%s.AS, ln %d]\n", file_name, ln_cnt); \
     } while (0)
+/*the following function returns the program's error status*/
+int error()
+{
+    return err;
+}
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
 int error_hndl(error_list err_num)
 {
-    if (err_num < 0) /*handle errors from get_CSV_arg. all of them are comma specific.*/
+    if ((err_num >= 0))
+        return err_num;
+    else /*handle errors from get_CSV_arg. all of them are comma specific.*/
     {
         err = TRUE;
         switch (err_num)
@@ -140,8 +151,8 @@ int is_cmd(char *cmd)
     if (id >= 0)
         return id;     /*return id.*/
     if (cmd[0] != '.') /*if strcmp didnt succeed and first char is not a dot. the supposed cmd is invalid.*/
-        error_hndl(UDEF_CMD);
-    return UDEF_CMD; /* isnt cmd, or not supported cmd.*/
+        return UDEF_CMD;
+    return POSSIBLE_INS; /* isnt cmd, possibly an ins*/
 }
 /*this function takes a string as arguments and compares it to a list of values (strings) in ins_string.
 the index of every such string is according to its ID as defined in the enum ins list in database header.
@@ -156,40 +167,40 @@ int ins_identify(char *ins)
             return ins_enum_id;          /*if ins is supported, its enum ID is returned for future reference.*/
     }
     if (ins[0] == '.') /*if strcmp didnt succeed and first char is a dot.the supposed ins is invalid.*/
-        error_hndl(UDEF_INS);
-    return UDEF_INS; /*not a ins, or not supported ins.*/
+        return UDEF_INS;
+    return POSSIBLE_CMD; /*not a ins, possibly a cmd*/
 }
 /*the following function classifys the given line to its type.
 input the first word (non label) of a line.
 returns:
-0 - invalid line
-1 - command line
-2 - insturction line
-*/
+line type, or the proper error code.*/
 int identify_line_type(char *cmd)
 {
-    if ((ins_identify(cmd) == UDEF_INS) && (is_cmd(cmd) >= 0))
-        return 1; /*the line is a command.*/
-    if ((ins_identify(cmd) >= 0) && (is_cmd(cmd) == UDEF_CMD))
-        return 2; /*the line is an instruction.*/
-    return 0;     /*invalid line.*/
+    int cmd_id = is_cmd(cmd);
+    int ins_id = ins_identify(cmd);
+    if (ins_id == UDEF_INS)
+        return UDEF_INS;
+    if (cmd_id == UDEF_CMD)
+        return UDEF_CMD;
+    if (cmd_id >= 0)
+        return CMD_LINE; /*the line is a command.*/
+    return INS_LINE;     /*the line must be an instruction.*/
 }
-/*check if label contains illigal characters of execced allowed lenght, argument is a string.*/
-void label_check(char *label)
+/*check if label contains illegal characters or execced allowed length, argument is a string.
+return TRUE if label is valid, otherwise the error code is returned.*/
+int label_check(char *label)
 {
     int i = 0;
     if (!(isalpha(label[0])))
-        error_hndl(FIRST_CHR_NON_ALPHA);
+        return FIRST_CHR_NON_ALPHA;
     if (cmd_identify(label) >= 0)
-        error_hndl(LABEL_RES_WORD);
+        return LABEL_RES_WORD;
     if (strlen(label) > LABEL_MAX_LEN)
-        error_hndl(LBL_LONG);
+        return LBL_LONG;
     for (; i < strlen(label); i++)
         if ((!isalpha(label[i])) && (!isdigit(label[i])))
-        {
-            error_hndl(LBL_ILLEGAL_CHAR);
-            return;
-        }
+            return LBL_ILLEGAL_CHAR;
+    return TRUE;
 }
 /*input - data_t node, the fucntion displays warnings in case of: node has label only or extern/enrty as a label.*/
 int ignore_label(data_t node)
@@ -197,21 +208,48 @@ int ignore_label(data_t node)
     if ((node.label) && (!node.cmd) && (!node.arg)) /*if the given line has label only, warning is displayed.*/
     {
         printf("warning: line contains label only - ignored [%s.AS, ln %d]\n", file_name, ln_cnt);
-        return 1; /*line to be ignored.*/
+        return IGNORE_LINE; /*line to be ignored.*/
     }
     if ((node.label) && (((strcmp(node.cmd, ".extern") == 0)) || ((strcmp(node.cmd, ".entry")) == 0))) /*if the line is an entry/extern and has a label, warning is displayed.*/
     {
         printf("warning: label with extern/entry is not supported [%s.AS, ln %d]\n", file_name, ln_cnt);
-        return 2; /*label to be ignored.*/
+        return IGNORE_LABEL; /*label to be ignored.*/
     }
-    return 0; /*label is accepted.*/
+    return ACCEPT_LABEL; /*label is accepted.*/
+}
+/*the following function checks if the given line contains a redundent lable, 
+i.e label combined with extern or an entry, or label only.
+the line or the label is ignored and freed with accordance to the data given.
+input   - data_t address
+        - string address containing the extracted line
+        - address of the line counter
+output  - FALSE if line was dropped
+        - FRUE if the lines is to be stored.
+*/
+int check_ln_label(data_t **pdata, char **line_st, int *l_cnt)
+{
+    int ign_label = ignore_label(**pdata); /*get label status. 1 = line has label only, 2 = ext/ent with label, 0 = label is valid.*/
+    if (ign_label == IGNORE_LINE)                    /*free current node, as its being ignored. line has label only.*/
+    {
+        free((*pdata)->label); /*free label string*/
+        free(*line_st);        /*free current line string.*/
+        free(*pdata);          /*free node*/
+        (*l_cnt)++;
+        return FALSE; /*return false as the line is being ignored.*/
+    }
+    if (ign_label == IGNORE_LABEL) /*line contains entry/extern and a label.*/
+    {
+        free((*pdata)->label);  /*ignore label.*/
+        (*pdata)->label = NULL; /*set label ptr to null.*/
+    }
+    return TRUE; /*line is valid*/
 }
 /*the following function checks if the given string is a register. if so, the id of the register is returned.
 otherwise -1 is returned.*/
-int register_id(char *str)
+int is_register(char *str)
 {
     int i = 0;
-    for (; i <= REG_NUM; i++)
+    for (; i < REG_NUM; i++)
     {
         if ((strcmp(str, registers[i])) == 0)
             return i;
@@ -220,66 +258,60 @@ int register_id(char *str)
 }
 /*the following function checks if @"s unnary operand is a valid register. input is the command string,
 output is FALSE if usage is invalid. otherwise TRUE.*/
-int is_register(char *str)
+int check_register(char *str)
 {
-    if ((str[0] == '@') && ((register_id(str + 1)) >= 0)) /*@'s unary operand is a register*/
+    if ((str[0] == '@') && ((is_register(str + 1)) >= 0)) /*@'s unary operand is a register*/
         return TRUE;
-    if ((str[0] == '@') && ((register_id(str + 1)) == -1)) /*@"s operand isnt a register*/
+    if ((str[0] == '@') && ((is_register(str + 1)) == -1)) /*@"s operand isnt a register*/
     {
         error_hndl(INVALID_UNARY_OP);
-        return FALSE;
+        return INVALID_UNARY_OP;
     }
-    if ((str[0] != '@') && ((register_id(str)) >= 0)) /* use of a register with out @*/
+    if ((str[0] != '@') && ((is_register(str)) >= 0)) /* use of a register with out @*/
     {
         error_hndl(INVALID_REG_USE);
-        return FALSE;
+        return INVALID_REG_USE;
     }
     return FALSE; /*otherwise, no @ operator and not a register.*/
 }
 /*the following function checks if the arguments of the given cmd are valid.
 if so, the number of "words" = addresses needed for storage is returned.
-in case of failure, error flag is updated to TRUE.*/
-int cmd_operand_check(command id, data_t node)
+in case of failure, error flag is returned.*/
+int operand_check(command id, data_t node)
 {
     char **arg = node.arg;
     int cmd_num_op[16] = {2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0};
     if (node.narg > cmd_num_op[id])
-    {
-        error_hndl(TOO_MANY_OPERANDS);
-        return 0;
-    }
+        return TOO_MANY_OPERANDS;
     if ((node.narg < cmd_num_op[id]) && (node.narg >= 0))
-    {
-        error_hndl(TOO_FEW_OPERANDS);
-        return 0;
-    }
+        return TOO_FEW_OPERANDS;
     switch (id)
     {
         /*src hash method = 1,3,5. dec hash method = 1,3,5*/
     case (CMP):
-        if ((is_register(*arg)) && (is_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
+        if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
             return 1;                                         /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
         /*src hash method = 1,3,5. dec hash method = 3,5*/
     case (MOV):
     case (ADD):
     case (SUB):
-        if ((is_register(*arg)) && (is_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
+        if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
         {
             return 1;
         } /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
         /*src hash method = 3. dec hash method = 3,5*/
     case (LEA):
-        if ((**arg == '@') && (register_id(*arg + 1)))
+        if ((**arg == '@') && (is_register(*arg + 1)))
         {
             error_hndl(UNS_SRC_HASHING);
         }
-        if ((register_id(*arg)) >= 0)
+        if ((is_register(*arg)) >= 0)
         {
             error_hndl(UNS_REG_SRC);
         }
-        is_register(*(arg + 1));
+        check_register(*(arg + 1));
         break;
         /*src hash method = NONE. dec hash method = 3,5*/
     case (NOT):
@@ -290,11 +322,11 @@ int cmd_operand_check(command id, data_t node)
     case (BNE):
     case (RED):
     case (JSR):
-        is_register(*arg);
+        check_register(*arg);
         break;
     /*src hash method = NONE. dec hash method = 1,3,5*/
     case (PRN):
-        is_register(*arg);
+        check_register(*arg);
         break;
         /*no operands.*/
     case (RTS):
@@ -348,31 +380,4 @@ int is_comment(char **line, int *ln_cnt)
         return TRUE;
     }
     return FALSE;
-}
-/*the following function checks if the given line contains a redundent lable, 
-i.e label combined with extern or an entry, or label only.
-the line or the label is ignored and freed with accordance to the data given.
-input   - data_t address
-        - string address containing the extracted line
-        - address of the line counter
-output  - FALSE if line was dropped
-        - FRUE if the lines is to be stored.
-*/
-int check_line_label(data_t **pdata, char **line_st, int *l_cnt)
-{
-    int ign_label = ignore_label(**pdata); /*get label status. 1 = line has label only, 2 = ext/ent with label, 0 = label is valid.*/
-    if (ign_label == 1)                    /*free current node, as its being ignored. line has label only.*/
-    {
-        free((*pdata)->label); /*free label string*/
-        free(*line_st);        /*free current line string.*/
-        free(*pdata);          /*free node*/
-        (*l_cnt)++;
-        return FALSE; /*return false as the line is being ignored.*/
-    }
-    if (ign_label == 2) /*line contains entry/extern and a label.*/
-    {
-        free((*pdata)->label);  /*ignore label.*/
-        (*pdata)->label = NULL; /*set label ptr to null.*/
-    }
-    return TRUE; /*line is valid*/
 }

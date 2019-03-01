@@ -4,6 +4,9 @@
         "database.h": "c",
         "err_check.h": "c",
         "data_handle.h": "c",
-        "error_handle.h": "c"
+        "error.h": "c",
+        "parser.h": "c",
+        "scanner.h": "c",
+        "data_structure.h": "c"
     }
 }

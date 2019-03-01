@@ -12,20 +12,20 @@ OBJ= $(SRC:.c=.o)
 TARGET= assembler
 assembler: $(OBJ)
 	$(CC) $(LFLAGS) $^ -o $@
-assembler.o: assembler.c parser.h database.h error_handle.h
+assembler.o: assembler.c database.h error.h scanner.h data_structure.h
 	$(CC) $(CFLAGS) $< -o $@
-parser.o: parser.c database.h error_handle.h
+data_structure.o: data_structure.c database.h
 	$(CC) $(CFLAGS) $< -o $@
-data_handle.o: data_handle.c database.h
+parser.o: parser.c database.h error.h
 	$(CC) $(CFLAGS) $< -o $@
-error_handle.o: error_handle.c database.h
+scanner.o: scanner.c data_structure.h error.h parser.h
+	$(CC) $(CFLAGS) $< -o $@
+error.o: error.c database.h
 	$(CC) $(CFLAGS) $< -o $@
 #delete executables and object files
 clean:
 	@rm -f *.o *.exe $(TARGET)
 	@echo Directory Cleaned
-#NOTE TO SELF: for bash/powershell, use "make clean" -> "make" when switching OS to avoid "cannot execute binary file" error.
-#run throught all of the input files.
 loop:
 	@echo ***running:
 	@for i in `seq 1 1` ; do \

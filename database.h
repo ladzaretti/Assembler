@@ -1,18 +1,19 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 #include <limits.h>
-#define CMD_LINE 1 /*define command line ID*/
-#define INS_LINE 2 /*define instruction line ID.*/
+#define CMD_LINE 1      /*define command line ID*/
+#define POSSIBLE_CMD -1 /*not a ins, possibly a cmd*/
+#define INS_LINE 2      /*define instruction line ID.*/
+#define POSSIBLE_INS -2 /*not a cmd, possibly ins.*/
 #define TRUE 1
 #define FALSE 0
-#define REG_NUM 7
+#define REG_NUM 8 /*number of registers*/
 #define LABEL_MAX_LEN 31
 extern const char cmd_string[16][5];
 extern const char ins_string[4][8];
 extern const char registers[8][4];
 extern char *file_name;
 extern int ln_cnt; /*read line counter.*/
-extern int err;    /*global error flag*/
 extern int IC;
 extern int DC;
 typedef enum
@@ -39,7 +40,7 @@ typedef enum
     LABEL_EXISTS,             /*label already exists*/
     UNINITILIZED_DATA,        /*uninitilaied .data variable*/
     UNINITILIZED_STRING,      /*uninitilaied .string variable*/
-    NON_INT                 /*given variable is not an integer*/
+    NON_INT                   /*given variable is not an integer*/
 
 } error_list;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
