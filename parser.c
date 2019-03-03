@@ -46,7 +46,7 @@ static void remove_leading_wspaces(char **str)
     strcpy(*str, temp_str + j);                           /*overwrite whitespace with the ending substring after it*/
     free(temp_str);                                       /*free copied string memory.*/
 }
-/*get input dynamically from stream3
+/*get input dynamically from stream
 function arguments: pointer to an array of char (string)
 return values:
 TRUE - finished successfully
@@ -54,15 +54,23 @@ FALSE - allocation failed
 EOF = -1 - reached input's EOF*/
 int fget_line(char **str, FILE *stream)
 {
-    int i = 1, ch;                                          /*ch = will get char from fgets, i = counts amount of char received, used for reallocation.*/
-    int leading_ws_flag = 1;                                /*leading whitespace flag.*/
+    int i = 1, ch;              /*ch = will get char from fgets, i = counts amount of char received, used for reallocation.*/
+    int leading_ws_flag = TRUE; /*leading whitespace flag.*/
+    int reg_op_flag = FALSE;
     char *temp = NULL;                                      /*temporary pointer to store reallocated memory block, to prevent data loss in case of failure.*/
     while (((ch = fgetc(stream)) != '\n') && ((ch != EOF))) /*get all chars from stdio till EOF / newline*/
     {
+        if (ch == '@')
+            reg_op_flag = TRUE;
         if (((ch == ' ') || (ch == '\t')) && (leading_ws_flag)) /*skip leading whitespaces.*/
             continue;
+        else if (reg_op_flag)
+        {
+            leading_ws_flag = TRUE;
+            reg_op_flag = FALSE;
+        }
         else
-            leading_ws_flag = 0;
+            leading_ws_flag = FALSE;
         temp = (char *)realloc(*str, sizeof(char) * i); /*allocate one more chunk of memory of size char*/
         if (!temp)
         {

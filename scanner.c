@@ -1,9 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "database.h"
 #include "data_structure.h"
 #include "error.h"
 #include "parser.h"
+/*address/direct word struct*/
+typedef struct
+{
+    unsigned int are : 2; /*ARE field*/
+    int data : 10;        /*address/data*/
+} bin_data;
+/*instruction word struct*/
+typedef struct
+{
+    unsigned int are : 2;      /*ARE field*/
+    unsigned int des_hash : 3; /*destination hashing method field*/
+    unsigned int op_code : 4;  /*op code field field*/
+    unsigned int src_hash : 3; /*source hashing method field*/
+} bin_ins;
+/*register word struct*/
+typedef struct
+{
+    unsigned int are : 2;     /*2 bits padding*/
+    unsigned int des_reg : 5; /*destination register address*/
+    unsigned int src_reg : 5; /*source register address*/
+} bin_reg;
+typedef enum
+{
+    BIN_DATA = 1,
+    BIN_INS,
+    BIN_REG
+} bin_type;
+typedef enum
+{
+    HASH_1 = 1, /*ןmmediate*/
+    HASH_3 = 3, /*direct*/
+    HASH_5 = 5  /*reg*/
+} hash_method;
+typedef enum
+{
+    LINK_A = 0,
+    LINK_R = 2,
+    LINK_E = 1
+} linkage_type;
 /*array of strings of known data types.*/
 const char ins_string[4][8] = {".data", ".string", ".entry", ".extern"};
 /*array of strings with known commands names as defined is the assignment, to be compared using strcmp with input cmd from user.*/
@@ -272,9 +312,12 @@ static void update_entry(list_t *list, list_t *symbol_list)
                     sym->entry = TRUE;
             }
         }
-        data = (data_t *)p->next->data;
-        if ((strcmp(data->cmd, ".entry")) && (strcmp(data->cmd, ".extern")))
-            return; /*entry/extern section in the list ended. as they are pushed to the list.*/
+        if (p->next)
+        {
+            data = (data_t *)p->next->data;
+            if ((strcmp(data->cmd, ".entry")) && (strcmp(data->cmd, ".extern")))
+                return; /*entry/extern section in the list ended. as they are pushed to the list.*/
+        }
         p = p->next;
     }
 }
@@ -313,4 +356,164 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
     update_entry(list, symbol_list);    /*update table on entry property*/
     list_print(*symbol_list, SYMBOL_T); /*print symbol table*/
     list_print(*list, DATA_T);          /*print list*/
+}
+/*allocate using calloc one block of size n_byte bytes.
+the function checks if allocation was successful.*/
+void *ccalloc(unsigned int n_byte)
+{
+    void *vessel = (void *)calloc(1, n_byte);
+    if (vessel)
+        return vessel;
+    else
+    {
+        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+        return NULL;
+    }
+}
+/*the following function receives a node and inserts its represention into the data list as int.
+input:  - address of the linked list
+        - address of data*/
+static void ins_data_section(list_t *data_list, data_t *pdata)
+{
+    char **arg = (char **)pdata->arg;
+    int i;
+    int *int_node = NULL;
+    int dat_type = ins_identify(pdata->cmd);
+    if (dat_type == DATA)
+    {
+        /*unfoled and insert into data list*/
+        for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
+        {
+            int_node = ccalloc(sizeof(int));
+            get_num(*(arg + i), int_node); /*get int represention.*/
+            list_enqueue(data_list, int_node);
+        }
+    }
+    else if (dat_type == STRING)
+    {
+        /*unfold and insert into data list*/
+        for (i = 0; i < strlen(*arg); i++) /*cycle thought all characters in the given string.*/
+        {
+            int_node = ccalloc(sizeof(int));
+            *int_node = *(*arg + i);
+            list_enqueue(data_list, int_node);
+        }
+        /*terminate with zero*/
+        list_enqueue(data_list, int_node = ccalloc(sizeof(int)));
+    }
+}
+list_t *bin_translate(list_t list, list_t symbol_list)
+{
+    list_t *data_list = ccalloc(sizeof(list_t));
+    list_t *ins_list = ccalloc(sizeof(list_t));
+    node_t *p = list.head;
+    data_t *pdata = NULL;
+    initilize_list(data_list);
+    initilize_list(ins_list);
+    IC = 100;
+    ln_cnt = 1;
+    while ((p) && (!error()))
+    {
+        data_t *pdata = (data_t *)p->data;                  /*get data section if the current node.*/
+        int ln_type = identify_line_type(pdata->cmd);       /*get line type.*/
+        if (ln_type == INS_LINE)                            /*node contains variable declaration.*/
+            ins_data_section(data_list, (data_t *)p->data); /*insert data into data zone.*/
+        if (ln_type == CMD_LINE)
+        {
+
+            char **arg = (char **)pdata->arg;
+            symbol_t *sym_data = NULL;
+            int i;
+            int reg_flag = FALSE; /*register flag*/
+            bin_ins *ins_word = ccalloc(sizeof(bin_ins));
+            bin_data *ins_info = NULL;
+            bin_reg *ins_reg = NULL;
+            /*create bin_ins, code op id*/
+            ins_word->op_code = cmd_identify(pdata->cmd);
+            list_enqueue(ins_list, (void *)ins_word);
+            IC++;
+            for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
+            {
+                if ((sym_data = search_label(&symbol_list, *(arg + i))))
+                {
+                    if (((sym_data->command) == TRUE) && (!((ins_word->op_code == JMP) || (ins_word->op_code == JSR))))
+                        error_hndl(CMD_AS_VAR);
+                    ins_info = ccalloc(sizeof(bin_data)); /*allocate ins_info*/
+                    ins_info->data = sym_data->address;   /*copy label address to ins_info*/
+                    /*update des and src hash method*/
+                    if ((!i) && (pdata->narg > 1)) /*label is a source*/
+                        ins_word->src_hash = HASH_3;
+                    else /*label is a destination.narg max=2.otherwise - error in the first scan or var declaration*/
+                        ins_word->des_hash = HASH_3;
+                    if (sym_data->external == TRUE)
+                        ins_info->are = LINK_E;
+                    else
+                        ins_info->are = LINK_R; /*set ARE relocatable*/
+                    /*if entry, insert into entry list with current IC*/
+                    /*
+
+
+                    */
+                    list_enqueue(ins_list, (void *)ins_info);
+                    IC++;
+                }
+                else if (!sym_data) /*not a label*/
+                {
+                    int num;
+                    if (get_num(*(arg + i), &num)) /*if num - > insert into ins list*/
+                    {
+                        ins_info = ccalloc(sizeof(bin_data)); /*allocate ins_info*/
+                        ins_info->data = num;                 /*set val*/
+                        ins_info->are = LINK_A;               /*set ARE as absolute.*/
+                        ins_word->des_hash = HASH_1;          /*des hash set,src hash is 0(calloc)*/
+                        list_enqueue(ins_list, (void *)ins_info);
+                        IC++;
+                    }
+                    /*if reg - > insert into ins list, set reg flag as true*/
+                    else if (check_register(*(arg + i)))
+                    {
+                        if (!i) /*reg is a source*/
+                        {
+                            ins_reg = ccalloc(sizeof(bin_reg));             /*allocate ins_info*/
+                            ins_reg->src_reg = is_register(*(arg + i) + 1); /*+1=skip @*/
+                            ins_word->src_hash = HASH_5;
+                            reg_flag = TRUE;
+                        }
+                        else /*reg is a destination.narg max=2.otherwise - error in the first scan or var declaration*/
+                        {    /*if reg and flag is on, insert into the same word*/
+                            if (reg_flag)
+                            {
+                                ins_reg->des_reg = is_register(*(arg + i) + 1);
+                                ins_word->des_hash = HASH_5;
+                                continue;
+                            }
+                            else
+                            {
+                                ins_reg = ccalloc(sizeof(bin_reg));
+                                ins_reg->des_reg = is_register(*(arg + i) + 1);
+                            }
+                            ins_word->des_hash = HASH_5;
+                            IC++;
+                        }
+                        list_enqueue(ins_list, (void *)ins_reg);
+                        IC++;
+                    }
+                    else
+                        error_hndl(UDEF_VAR); /*otherwise print error = undefined variable*/
+                }
+            }
+        }
+        /*update IC*/
+        /*combine data and ins lists*/
+        /**/
+        p = p->next;
+        ln_cnt++;
+    }
+    printf("%d\n", IC);
+    puts("__________________________________");
+    list_print(*ins_list, BINARY_T);
+    list_print(*data_list, BINARY_T);
+    list_free(data_list, BINARY_T);
+    free(data_list);
+    return ins_list;
 }

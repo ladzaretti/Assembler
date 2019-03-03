@@ -25,6 +25,7 @@ typedef enum
     MIS_COMMA,                /*missing comma*/
     UDEF_CMD,                 /*undefined command*/
     UDEF_INS,                 /*undefined data*/
+    UDEF_VAR,                 /*undefined variable*/
     FIRST_CHR_NON_ALPHA,      /*label first char isnt alphabetic*/
     LABEL_RES_WORD,           /*reserved word is used as a label*/
     LBL_LONG,                 /*label exceeds max len*/
@@ -40,8 +41,8 @@ typedef enum
     LABEL_EXISTS,             /*label already exists*/
     UNINITILIZED_DATA,        /*uninitilaied .data variable*/
     UNINITILIZED_STRING,      /*uninitilaied .string variable*/
-    NON_INT                   /*given variable is not an integer*/
-
+    NON_INT,                  /*given variable is not an integer*/
+    CMD_AS_VAR                /*using a command as cmd argument*/
 } error_list;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
 each record is define explicidly to avoid jumps in value.*/
@@ -77,7 +78,8 @@ typedef enum
 enum node_type
 {
     DATA_T = 0,
-    SYMBOL_T = 1
+    SYMBOL_T = 1,
+    BINARY_T = 2
 };
 /*struct to store parsed line*/
 typedef struct data

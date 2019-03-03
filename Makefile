@@ -18,7 +18,7 @@ data_structure.o: data_structure.c database.h
 	$(CC) $(CFLAGS) $< -o $@
 parser.o: parser.c database.h error.h
 	$(CC) $(CFLAGS) $< -o $@
-scanner.o: scanner.c data_structure.h error.h parser.h
+scanner.o: scanner.c data_structure.h error.h parser.h database.h 
 	$(CC) $(CFLAGS) $< -o $@
 error.o: error.c database.h
 	$(CC) $(CFLAGS) $< -o $@

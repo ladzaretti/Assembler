@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include "database.h"
+#define WORD_SIZE 12
 /*initilize linked list with NULL.
 input - address of a list.*/
 void initilize_list(list_t *list)
@@ -38,12 +40,16 @@ static void free_sym(void **node)
         free((*p)->label); /*free field.*/
     free(*p);
 }
+static void free_bin(void **node)
+{
+    free(*node);
+}
 /*the following function gets a pointer to a list. the function frees it. 
 free data node by its type. the function frees the address of a node by a void ptr, gets its type as enum.
 the node is then freed by using the coresponding function with a pointer to it.*/
 void list_free(list_t *list, int type)
 {
-    void (*fp_free_dt[])(void **) = {&free_dt, &free_sym};
+    void (*fp_free_dt[])(void **) = {&free_dt, &free_sym, &free_bin};
     ptr p;                  /*pointer to store address of the node before going to the next.*/
     ptr *h = &(list->head); /*get the address of the head pointer*/
     while (*h)              /*iterate over the linked list*/
@@ -73,6 +79,24 @@ static void print_dt(void *node)
     }
     puts("__________________________________");
 }
+/*print the binary represention of a given variable of size b_size .
+input the address of the desired variable and its size in bits.*/
+void binary_print(void *num, int b_size)
+{
+    uint64_t mask = 1;
+    int i = 0;
+    mask <<= b_size - 1;                /*move first bit to the end of the represention.*/
+    for (; i < b_size; i++, mask >>= 1) /*print bits*/
+    {
+        printf("%s", *(uint64_t *)(num)&mask ? "1" : "0");
+    }
+    printf("\n");
+}
+/*intermediate function from the generic list printing to the generic binary print.*/
+static void print_machine_word(void *pnum)
+{
+    binary_print(pnum, WORD_SIZE);
+}
 /*the following function prints the fields of a symbol_t object. receives data_t. return none.*/
 static void print_sym(void *node)
 {
@@ -90,9 +114,9 @@ static void print_sym(void *node)
 print list with given data type.*/
 void list_print(list_t list, int type)
 {
-    void (*fp_prnt_dt[])(void *) = {&print_dt, &print_sym}; /*array of printing functions, sorted by type.*/
-    ptr h = list.head;                                      /*set pointer to head.*/
-    while (h)                                               /*iterate thought all its nodes*/
+    void (*fp_prnt_dt[])(void *) = {&print_dt, &print_sym, &print_machine_word}; /*array of printing functions, sorted by type.*/
+    ptr h = list.head;                                                           /*set pointer to head.*/
+    while (h)                                                                    /*iterate thought all its nodes*/
     {
         (*fp_prnt_dt[type])((void *)h->data); /*activate printing by type. print node.*/
         h = h->next;                          /*advance to the next node.*/

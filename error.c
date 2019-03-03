@@ -124,6 +124,12 @@ int error_hndl(error_list err_num)
             print_error("argument is not an integer");
             /*printf("error: argument is not an integer [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
+        case CMD_AS_VAR:
+            print_error("using cmd label as var");
+            break;
+        case UDEF_VAR:
+            print_error("undefined variable");
+            break;
         }
     }
     return err_num;
@@ -229,7 +235,7 @@ output  - FALSE if line was dropped
 int check_ln_label(data_t **pdata, char **line_st, int *l_cnt)
 {
     int ign_label = ignore_label(**pdata); /*get label status. 1 = line has label only, 2 = ext/ent with label, 0 = label is valid.*/
-    if (ign_label == IGNORE_LINE)                    /*free current node, as its being ignored. line has label only.*/
+    if (ign_label == IGNORE_LINE)          /*free current node, as its being ignored. line has label only.*/
     {
         free((*pdata)->label); /*free label string*/
         free(*line_st);        /*free current line string.*/
@@ -290,7 +296,7 @@ int operand_check(command id, data_t node)
         /*src hash method = 1,3,5. dec hash method = 1,3,5*/
     case (CMP):
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
-            return 1;                                         /*return 1 as the needed space in memory, two registers in one machine "word".*/
+            return 1;                                               /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
         /*src hash method = 1,3,5. dec hash method = 3,5*/
     case (MOV):

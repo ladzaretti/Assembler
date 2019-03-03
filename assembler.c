@@ -11,8 +11,9 @@ int DC = 0;             /*data counter.*/
 int IC = 100;           /*instruction counter.*/
 int main(int argc, char **argv)
 {
-    list_t list;        /* linked list to contain the prased data.*/
+    list_t parsed_list; /* linked list to contain the prased data.*/
     list_t symbol_list; /* linked list to contain the the symbol table.*/
+    list_t *instruction_list = NULL;
     while (*++argv)
     {
         FILE *fp;
@@ -23,15 +24,18 @@ int main(int argc, char **argv)
             file_name = path_fname_extract(*argv);
             puts(file_name);
             /*first scan*/
-            initial_scan(&symbol_list, &list, fp);
+            initial_scan(&symbol_list, &parsed_list, fp);
             /*second scan*/
             printf("DC=%d. IC=%d\n", DC, IC);
             printf("error = %s\n", error() == TRUE ? "TRUE" : "FALSE");
-            if ((list.tail) && (error() == FALSE))
+            if ((parsed_list.tail) && (error() == FALSE))
             {
+                instruction_list = bin_translate(parsed_list, symbol_list);
+                list_free(instruction_list, BINARY_T);
+                free(instruction_list);
             }
             list_free(&symbol_list, SYMBOL_T); /*free symbol table.*/
-            list_free(&list, DATA_T);          /*free the data list*/
+            list_free(&parsed_list, DATA_T);   /*free the data list*/
             free(file_name);
             fclose(fp);
         } /*scanning block*/

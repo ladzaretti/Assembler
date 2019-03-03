@@ -39,4 +39,5 @@ output  - none*/
 void symbol_table_add_IC(list_t *);
 /**/
 void initial_scan(list_t *symbol_list, list_t *list, FILE *fp);
+list_t *bin_translate(list_t list, list_t symbol_list);
 #endif
