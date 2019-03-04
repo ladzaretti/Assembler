@@ -20,5 +20,6 @@ void initilize_list(list_t *);
 /*this function receives a pointer to a list and a label to search in the given list.
 if the label exists, its node address is return to the caller. otherwise NULL is returned.*/
 void *search_label(list_t *, char *);
-void binary_print(void *num, int b_size);
+/*chain given lists.*/
+void chain_lists(list_t *, list_t *);
 #endif

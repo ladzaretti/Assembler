@@ -189,3 +189,18 @@ void *search_label(list_t *sym_t, char *label)
     }
     return NULL; /*not found, return NULL.*/
 }
+/*chain given lists.*/
+void chain_lists(list_t *dest, list_t *src)
+{
+    if (!(dest->head))
+    {
+        dest->head = src->head;
+        dest->tail = src->tail;
+    }
+    else
+    {
+        dest->tail->next = src->head;
+        src->head->prev = dest->head;
+    }
+    free(src);
+}

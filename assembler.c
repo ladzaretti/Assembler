@@ -31,6 +31,7 @@ int main(int argc, char **argv)
             if ((parsed_list.tail) && (error() == FALSE))
             {
                 instruction_list = bin_translate(parsed_list, symbol_list);
+                list_print(*instruction_list, BINARY_T);
                 list_free(instruction_list, BINARY_T);
                 free(instruction_list);
             }
