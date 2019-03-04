@@ -56,7 +56,7 @@ zero is returned. the vessel num doesnt changed.
 if successful, TRUE is return and num gets the whole part of the double.*/
 /*some functions (might have been slightly modified) are reused from assignment 22*/
 /*the following function receives a path as string and extracts its filename. the function then returns the filename as a string.*/
-char *path_fname_extract(char *Fpath)
+char *path_fname_extract(const char *Fpath)
 {
     int i = 1;
     char *fname = NULL; /*string to contain the filename from given path*/
@@ -78,13 +78,45 @@ char *path_fname_extract(char *Fpath)
     }
     temp = (char *)realloc(fname, sizeof(char) * i); /*reallocated space for string termination*/
     if (!temp)
+    {
         printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+        return NULL;
+    }
     else
     {
         fname = temp;
         *(fname + i - 1) = 0; /*terminate string.*/
     }
     return fname;
+}
+/*use argv to open file, argv can contain an extension or not.
+file_name will be asigned with the extensionless file name.*/
+FILE *dy_fopen(const char *argv, char **file_name)
+{
+    int end_index = strlen(argv);
+    if ((argv[end_index - 3] == '.') && (argv[end_index - 2] == 'A') && (argv[end_index - 1] == 'S'))
+    {
+        *file_name = path_fname_extract(argv);
+        return fopen(argv, "r");
+    }
+    else
+    {
+        char *temp = NULL;
+        FILE *fp = NULL;
+        temp = (char *)realloc(temp, sizeof(char) * ((strlen(argv)) + 2)); /*extra for extension*/
+        *file_name = (char *)realloc(*file_name, sizeof(char) * ((strlen(argv)) + 1));
+        if ((!temp) || (!file_name)) /*check if allocation was successful*/
+        {
+            printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+            return NULL;
+        }
+        strcpy(*file_name, argv);
+        strncpy(temp, argv, strlen(argv)); /*copy without null*/
+        strcat(temp, ".AS");
+        fp = fopen(temp, "r");
+        free(temp);
+        return fp;
+    }
 }
 int get_num(char *src, int *num)
 {
@@ -321,6 +353,10 @@ static void update_entry(list_t *list, list_t *symbol_list)
         p = p->next;
     }
 }
+/*parse given stream in to raw list, create symbol table from the parsed list.
+input:  -   addresses of two empty linked lists. one for the parsed data and the other 
+            for the symbol table. 
+        -   input stream.*/
 void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
 {
     char *line = NULL;    /*string for a line from AS file*/
@@ -359,9 +395,9 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
 }
 /*allocate using calloc one block of size n_byte bytes.
 the function checks if allocation was successful.*/
-void *ccalloc(unsigned int n_byte)
+void *ccalloc(unsigned int size, unsigned int n_byte)
 {
-    void *vessel = (void *)calloc(1, n_byte);
+    void *vessel = (void *)calloc(size, n_byte);
     if (vessel)
         return vessel;
     else
@@ -373,7 +409,7 @@ void *ccalloc(unsigned int n_byte)
 /*the following function receives a node and inserts its represention into the data list as int.
 input:  - address of the linked list
         - address of data*/
-static void ins_data_section(list_t *data_list, data_t *pdata)
+static void build_data_section(list_t *data_list, data_t *pdata)
 {
     char **arg = (char **)pdata->arg;
     int i;
@@ -384,7 +420,7 @@ static void ins_data_section(list_t *data_list, data_t *pdata)
         /*unfoled and insert into data list*/
         for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
         {
-            int_node = ccalloc(sizeof(int));
+            int_node = ccalloc(1, sizeof(int));
             get_num(*(arg + i), int_node); /*get int represention.*/
             list_enqueue(data_list, int_node);
         }
@@ -394,38 +430,54 @@ static void ins_data_section(list_t *data_list, data_t *pdata)
         /*unfold and insert into data list*/
         for (i = 0; i < strlen(*arg); i++) /*cycle thought all characters in the given string.*/
         {
-            int_node = ccalloc(sizeof(int));
+            int_node = ccalloc(1, sizeof(int));
             *int_node = *(*arg + i);
             list_enqueue(data_list, int_node);
         }
         /*terminate with zero*/
-        list_enqueue(data_list, int_node = ccalloc(sizeof(int)));
+        list_enqueue(data_list, int_node = ccalloc(1, sizeof(int)));
     }
 }
+/*if given string is an integer, if true - create an absolute bin word.
+update instruction word and return the built word to the caller.
+otherwise return false.*/
+bin_data *create_bin_int(char *arg, bin_ins *ins_word)
+{
+    bin_data *ins_info = NULL;
+    int num;
+    if (get_num(arg, &num)) /*if num - > insert into ins list*/
+    {
+        ins_info = ccalloc(1, sizeof(bin_data)); /*allocate ins_info*/
+        ins_info->data = num;                    /*set val*/
+        ins_info->are = LINK_A;                  /*set ARE as absolute.*/
+        ins_word->des_hash = HASH_1;             /*des hash set,src hash is 0(calloc)*/
+    }
+    return ins_info;
+}
+/*create the binary represention of the given parsed list and the symbol table.
+assumed that the input data contains no errors from the initial scan.*/
 list_t *bin_translate(list_t list, list_t symbol_list)
 {
-    list_t *data_list = ccalloc(sizeof(list_t));
-    list_t *ins_list = ccalloc(sizeof(list_t));
+    list_t *data_list = ccalloc(1, sizeof(list_t));
+    list_t *ins_list = ccalloc(1, sizeof(list_t));
     node_t *p = list.head;
-    data_t *pdata = NULL;
     initilize_list(data_list);
     initilize_list(ins_list);
     IC = 100;
     ln_cnt = 1;
     while ((p) && (!error()))
     {
-        data_t *pdata = (data_t *)p->data;                  /*get data section if the current node.*/
-        int ln_type = identify_line_type(pdata->cmd);       /*get line type.*/
-        if (ln_type == INS_LINE)                            /*node contains variable declaration.*/
-            ins_data_section(data_list, (data_t *)p->data); /*insert data into data zone.*/
+        data_t *pdata = (data_t *)p->data;                    /*get parsed data section of the current node.*/
+        int ln_type = identify_line_type(pdata->cmd);         /*get line type.*/
+        if (ln_type == INS_LINE)                              /*node contains variable declaration.*/
+            build_data_section(data_list, (data_t *)p->data); /*insert data into data zone.*/
         if (ln_type == CMD_LINE)
         {
-
-            char **arg = (char **)pdata->arg;
+            char **arg = (char **)pdata->arg; /*get command arguments string array*/
             symbol_t *sym_data = NULL;
             int i;
-            int reg_flag = FALSE; /*register flag*/
-            bin_ins *ins_word = ccalloc(sizeof(bin_ins));
+            int reg_flag = FALSE; /*register flag, in case the both the arguments are registers*/
+            bin_ins *ins_word = ccalloc(1, sizeof(bin_ins));
             bin_data *ins_info = NULL;
             bin_reg *ins_reg = NULL;
             /*create bin_ins, code op id*/
@@ -434,21 +486,21 @@ list_t *bin_translate(list_t list, list_t symbol_list)
             IC++;
             for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
             {
-                if ((sym_data = search_label(&symbol_list, *(arg + i))))
+                if ((sym_data = search_label(&symbol_list, *(arg + i)))) /*get symbol node for the currecnt label*/
                 {
-                    if (((sym_data->command) == TRUE) && (!((ins_word->op_code == JMP) || (ins_word->op_code == JSR))))
-                        error_hndl(CMD_AS_VAR);
-                    ins_info = ccalloc(sizeof(bin_data)); /*allocate ins_info*/
-                    ins_info->data = sym_data->address;   /*copy label address to ins_info*/
+                    /*if (((sym_data->command) == TRUE) && (!((ins_word->op_code == JMP) || (ins_word->op_code == JSR))))
+                        error_hndl(CMD_AS_VAR);*/
+                    ins_info = ccalloc(1, sizeof(bin_data)); /*allocate ins_info*/
+                    ins_info->data = sym_data->address;      /*copy label address to ins_info*/
                     /*update des and src hash method*/
                     if ((!i) && (pdata->narg > 1)) /*label is a source*/
                         ins_word->src_hash = HASH_3;
-                    else /*label is a destination.narg max=2.otherwise - error in the first scan or var declaration*/
+                    else /*label is a destination. narg max=2.otherwise - error in the first scan or var declaration*/
                         ins_word->des_hash = HASH_3;
-                    if (sym_data->external == TRUE)
+                    if (sym_data->external == TRUE) /*the given label is external*/
                         ins_info->are = LINK_E;
                     else
-                        ins_info->are = LINK_R; /*set ARE relocatable*/
+                        ins_info->are = LINK_R; /*set ARE as relocatable*/
                     /*if entry, insert into entry list with current IC*/
                     /*
 
@@ -459,13 +511,8 @@ list_t *bin_translate(list_t list, list_t symbol_list)
                 }
                 else if (!sym_data) /*not a label*/
                 {
-                    int num;
-                    if (get_num(*(arg + i), &num)) /*if num - > insert into ins list*/
+                    if ((ins_info = create_bin_int(*(arg + i), ins_word))) /*in case the arguments is an interger*/
                     {
-                        ins_info = ccalloc(sizeof(bin_data)); /*allocate ins_info*/
-                        ins_info->data = num;                 /*set val*/
-                        ins_info->are = LINK_A;               /*set ARE as absolute.*/
-                        ins_word->des_hash = HASH_1;          /*des hash set,src hash is 0(calloc)*/
                         list_enqueue(ins_list, (void *)ins_info);
                         IC++;
                     }
@@ -474,7 +521,7 @@ list_t *bin_translate(list_t list, list_t symbol_list)
                     {
                         if (!i) /*reg is a source*/
                         {
-                            ins_reg = ccalloc(sizeof(bin_reg));             /*allocate ins_info*/
+                            ins_reg = ccalloc(1, sizeof(bin_reg));          /*allocate ins_info*/
                             ins_reg->src_reg = is_register(*(arg + i) + 1); /*+1=skip @*/
                             ins_word->src_hash = HASH_5;
                             reg_flag = TRUE;
@@ -489,11 +536,10 @@ list_t *bin_translate(list_t list, list_t symbol_list)
                             }
                             else
                             {
-                                ins_reg = ccalloc(sizeof(bin_reg));
+                                ins_reg = ccalloc(1, sizeof(bin_reg));
                                 ins_reg->des_reg = is_register(*(arg + i) + 1);
+                                ins_word->des_hash = HASH_5;
                             }
-                            ins_word->des_hash = HASH_5;
-                            IC++;
                         }
                         list_enqueue(ins_list, (void *)ins_reg);
                         IC++;
@@ -503,9 +549,7 @@ list_t *bin_translate(list_t list, list_t symbol_list)
                 }
             }
         }
-        /*update IC*/
         /*combine data and ins lists*/
-        /**/
         p = p->next;
         ln_cnt++;
     }

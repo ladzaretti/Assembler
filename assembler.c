@@ -17,7 +17,8 @@ int main(int argc, char **argv)
     while (*++argv)
     {
         FILE *fp;
-        if (!(fp = fopen(*argv, "r")))
+        /*if (!(fp = fopen(*argv, "r")))*/
+        if (!(fp = dy_fopen(*argv, &file_name)))
             printf("file <%s> does not exist.\n", *argv);
         else
         {
