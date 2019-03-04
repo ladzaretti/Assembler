@@ -44,12 +44,20 @@ static void free_bin(void **node)
 {
     free(*node);
 }
+/*the following function receives a address of a external_t node, then frees its allocated fields. and finally frees the node itself.*/
+static void free_entry(void **node)
+{
+    external_t **p = (external_t **)node;
+    if ((*p)->label)       /*if field is non NULL.*/
+        free((*p)->label); /*free field.*/
+    free(*p);
+}
 /*the following function gets a pointer to a list. the function frees it. 
 free data node by its type. the function frees the address of a node by a void ptr, gets its type as enum.
 the node is then freed by using the coresponding function with a pointer to it.*/
 void list_free(list_t *list, int type)
 {
-    void (*fp_free_dt[])(void **) = {&free_dt, &free_sym, &free_bin};
+    void (*fp_free_dt[])(void **) = {&free_dt, &free_sym, &free_bin, &free_entry};
     ptr p;                  /*pointer to store address of the node before going to the next.*/
     ptr *h = &(list->head); /*get the address of the head pointer*/
     while (*h)              /*iterate over the linked list*/
@@ -110,13 +118,23 @@ static void print_sym(void *node)
     printf("entry=<%s>\n", (*p).entry == 1 ? "true" : "false");
     puts("__________________________________");
 }
+/*the following function prints the fields of a data_t object. receives data_t. return none.*/
+static void print_entry(void *node)
+{
+    external_t *p = (external_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
+    puts("__________________________________");
+    if ((*p).label) /*if label exists*/
+        printf("label = <%s>\n", (*p).label);
+    printf("address  = <%d>\n", (*p).address);
+    puts("__________________________________");
+}
 /*the following function prints the given generic list, the type of the node is passed as an enum entry.
 print list with given data type.*/
 void list_print(list_t list, int type)
 {
-    void (*fp_prnt_dt[])(void *) = {&print_dt, &print_sym, &print_machine_word}; /*array of printing functions, sorted by type.*/
-    ptr h = list.head;                                                           /*set pointer to head.*/
-    while (h)                                                                    /*iterate thought all its nodes*/
+    void (*fp_prnt_dt[])(void *) = {&print_dt, &print_sym, &print_machine_word, &print_entry}; /*array of printing functions, sorted by type.*/
+    ptr h = list.head;                                                                         /*set pointer to head.*/
+    while (h)                                                                                  /*iterate thought all its nodes*/
     {
         (*fp_prnt_dt[type])((void *)h->data); /*activate printing by type. print node.*/
         h = h->next;                          /*advance to the next node.*/
@@ -192,14 +210,15 @@ void *search_label(list_t *sym_t, char *label)
 /*chain given lists.*/
 void chain_lists(list_t *dest, list_t *src)
 {
-    if (!(dest->head))
+    if (!(dest->head)) /*dest list is empty*/
     {
         dest->head = src->head;
         dest->tail = src->tail;
     }
-    else
+    else if ((src->head)) /*src isnt empty*/
     {
         dest->tail->next = src->head;
+        dest->tail = src->tail;
         src->head->prev = dest->head;
     }
     free(src);

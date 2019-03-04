@@ -328,7 +328,7 @@ void symbol_table_add_IC(list_t *symbol_list)
 input:  - parsed data linked list
         - symbol table represented as linked list.
 output: none.*/
-static void update_entry(list_t *list, list_t *symbol_list)
+static void update_symbol_entry(list_t *list, list_t *symbol_list)
 {
     node_t *p = list->head; /*head pointer*/
     while (p)
@@ -388,11 +388,11 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
         }                                          /*end of symbol table creation block.*/
         free(temp);                                /*free current line string.*/
         ln_cnt++;
-    }                                   /*end of input stream.*/
-    symbol_table_add_IC(symbol_list);   /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
-    update_entry(list, symbol_list);    /*update table on entry property*/
-    list_print(*symbol_list, SYMBOL_T); /*print symbol table*/
-    list_print(*list, DATA_T);          /*print list*/
+    }                                       /*end of input stream.*/
+    symbol_table_add_IC(symbol_list);       /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
+    update_symbol_entry(list, symbol_list); /*update table on entry property*/
+    list_print(*symbol_list, SYMBOL_T);     /*print symbol table*/
+    list_print(*list, DATA_T);              /*print list*/
 }
 /*allocate using calloc one block of size n_byte bytes.
 the function checks if allocation was successful.*/
@@ -455,9 +455,37 @@ bin_data *create_bin_int(char *arg, bin_ins *ins_word)
     }
     return ins_info;
 }
-static void build_instruction_section(list_t *ins_block, list_t *symbol_list, data_t *pdata)
+/*create entry node from the given label and address.
+returns null on failure, otherwise the address of the node.*/
+external_t *build_external_node(char *label, int address)
+{
+    external_t *node = (external_t *)calloc(1, sizeof(external_t));
+    if (!node)
+    {
+        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+        return NULL;
+    }
+    node->label = (char *)malloc(sizeof(char) * (strlen(label) + 1));
+    if (!(node->label))
+    {
+        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+        return NULL;
+    }
+    else
+    {
+        strcpy(node->label, label);
+        node->address = address;
+    }
+    return node;
+}
+/*create instruction block from the given data.
+input:  - pdata as a pointer to parsed node.
+        - symbol list.
+output  - linked list on an instruction block.*/
+static list_t *build_instruction_section(list_t *symbol_list, list_t *entry_list, data_t *pdata)
 {
     char **arg = (char **)pdata->arg; /*get command arguments string array*/
+    list_t *ins_block = ccalloc(1, sizeof(list_t));
     symbol_t *sym_data = NULL;
     int i;
     int reg_flag = FALSE; /*register flag, in case the both the arguments are registers*/
@@ -479,17 +507,19 @@ static void build_instruction_section(list_t *ins_block, list_t *symbol_list, da
             /*update des and src hash method*/
             if ((!i) && (pdata->narg > 1)) /*label is a source*/
                 ins_word->src_hash = HASH_3;
-            else /*label is a destination. narg max=2.otherwise - error in the first scan or var declaration*/
+            else /*label is a destination. narg max=2. otherwise - error in the first scan or var declaration*/
                 ins_word->des_hash = HASH_3;
             if (sym_data->external == TRUE) /*the given label is external*/
                 ins_info->are = LINK_E;
             else
                 ins_info->are = LINK_R; /*set ARE as relocatable*/
-            /*if entry, insert into entry list with current IC*/
-            /*
-
-
-                    */
+            if (sym_data->external)     /*if entry, insert into entry list with current IC*/
+            {
+                external_t *node = NULL;
+                printf("external = %s \n", (*(arg + i)));
+                node = build_external_node(*(arg + i), IC);
+                list_enqueue(entry_list, (void *)node);
+            }
             list_enqueue(ins_block, (void *)ins_info);
             IC++;
         }
@@ -532,6 +562,7 @@ static void build_instruction_section(list_t *ins_block, list_t *symbol_list, da
                 error_hndl(UDEF_VAR); /*otherwise print error = undefined variable*/
         }
     }
+    return ins_block;
 }
 /*create the binary represention of the given parsed list and the symbol table.
 assumed that the input data contains no errors from the initial scan.*/
@@ -539,9 +570,11 @@ list_t *bin_translate(list_t list, list_t symbol_list)
 {
     list_t *data_list = ccalloc(1, sizeof(list_t));
     list_t *ins_list = ccalloc(1, sizeof(list_t));
+    list_t *external_list = ccalloc(1, sizeof(list_t));
     node_t *p = list.head;
     initilize_list(data_list);
     initilize_list(ins_list);
+    initilize_list(external_list);
     IC = 100;
     ln_cnt = 1;
     while ((p) && (!error()))
@@ -552,11 +585,10 @@ list_t *bin_translate(list_t list, list_t symbol_list)
             build_data_section(data_list, (data_t *)p->data); /*insert data into data zone.*/
         if (ln_type == CMD_LINE)
         {
-            /*list_t *temp_block = build_instruction_section(&symbol_list, pdata);
+            list_t *temp_block = build_instruction_section(&symbol_list, external_list, pdata);
             puts("----------------");
             list_print(*temp_block, BINARY_T);
-            chain_lists(ins_list, temp_block);*/
-            build_instruction_section(ins_list, &symbol_list, pdata);
+            chain_lists(ins_list, temp_block);
         }
         /*combine data and ins lists*/
         p = p->next;
@@ -566,6 +598,9 @@ list_t *bin_translate(list_t list, list_t symbol_list)
     puts("__________________________________");
     /*list_print(*ins_list, BINARY_T);
     list_print(*data_list, BINARY_T);*/
+    list_print(*external_list, EXTERNAL_T);
+    list_free(external_list, EXTERNAL_T);
+    free(external_list);
     chain_lists(ins_list, data_list);
     return ins_list;
 }

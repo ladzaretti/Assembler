@@ -79,7 +79,8 @@ enum node_type
 {
     DATA_T = 0,
     SYMBOL_T = 1,
-    BINARY_T = 2
+    BINARY_T = 2,
+    EXTERNAL_T = 3
 };
 /*struct to store parsed line*/
 typedef struct data
@@ -89,6 +90,11 @@ typedef struct data
     char **arg;
     int narg;
 } data_t;
+typedef struct entry
+{
+    char *label;
+    int address;
+} external_t;
 typedef struct symbol
 {
     char *label;
