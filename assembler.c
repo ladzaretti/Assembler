@@ -17,12 +17,11 @@ int main(int argc, char **argv)
     while (*++argv)
     {
         FILE *fp;
-        /*if (!(fp = fopen(*argv, "r")))*/
+        file_name = NULL;
         if (!(fp = dy_fopen(*argv, &file_name)))
-            printf("file <%s> does not exist.\n", *argv);
+            printf("file <%s> does not exist.\n", file_name);
         else
         {
-            file_name = path_fname_extract(*argv);
             puts(file_name);
             /*first scan*/
             initial_scan(&symbol_list, &parsed_list, fp);

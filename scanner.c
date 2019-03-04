@@ -89,7 +89,7 @@ char *path_fname_extract(const char *Fpath)
     }
     return fname;
 }
-/*use argv to open file, argv can contain an extension or not.
+/*use argv to a open file, argv can contain an extension or not.
 file_name will be asigned with the extensionless file name.*/
 FILE *dy_fopen(const char *argv, char **file_name)
 {
@@ -103,16 +103,17 @@ FILE *dy_fopen(const char *argv, char **file_name)
     {
         char *temp = NULL;
         FILE *fp = NULL;
-        temp = (char *)realloc(temp, sizeof(char) * ((strlen(argv)) + 2)); /*extra for extension*/
+        temp = (char *)realloc(temp, sizeof(char) * ((strlen(argv)) + 4)); /*extra for extension and null*/
         *file_name = (char *)realloc(*file_name, sizeof(char) * ((strlen(argv)) + 1));
+
         if ((!temp) || (!file_name)) /*check if allocation was successful*/
         {
             printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
             return NULL;
         }
         strcpy(*file_name, argv);
-        strncpy(temp, argv, strlen(argv)); /*copy without null*/
-        strcat(temp, ".AS");
+        strcpy(temp, argv);  /*copy without null*/
+        strcat(temp, ".AS"); /*add extension*/
         fp = fopen(temp, "r");
         free(temp);
         return fp;
