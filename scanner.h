@@ -40,7 +40,13 @@ with the final IC count.
 input   - address of the symbol list
 output  - none*/
 void symbol_table_add_IC(list_t *);
-/**/
+/*parse given stream in to raw list, create symbol table from the parsed list.
+input:  -   addresses of two empty linked lists. one for the parsed data and the other 
+            for the symbol table. 
+        -   input stream.*/
 void initial_scan(list_t *symbol_list, list_t *list, FILE *fp);
-list_t *bin_translate(list_t list, list_t symbol_list);
+/*create the binary represention of the given parsed list and the symbol table.
+assumed that the input data contains no errors from the initial scan.
+if encountered, update external variable list.*/
+list_t *bin_translate(list_t list, list_t symbol_list, list_t **);
 #endif

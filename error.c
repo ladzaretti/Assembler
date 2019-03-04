@@ -21,6 +21,11 @@ int error()
 {
     return err;
 }
+/*reset error flag*/
+int reset_error()
+{
+    err = FALSE;
+}
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
 int error_hndl(error_list err_num)
@@ -77,6 +82,10 @@ int error_hndl(error_list err_num)
             break;
         case INVALID_REG_USE:
             print_error("invalid register usage, missing unary operator");
+            /*printf("error: invalid register usage, missing unary operator - @ [%s.AS ln %d]\n", file_name, ln_cnt);*/
+            break;
+        case INVALID_ARGUMENT:
+            print_error("invalid argument");
             /*printf("error: invalid register usage, missing unary operator - @ [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case INVALID_UNARY_OP:
@@ -286,6 +295,7 @@ in case of failure, error flag is returned.*/
 int operand_check(command id, data_t node)
 {
     char **arg = node.arg;
+    char *ptr; /*dummy for strtod*/
     int cmd_num_op[16] = {2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0};
     if (node.narg > cmd_num_op[id])
         return TOO_MANY_OPERANDS;
@@ -302,6 +312,8 @@ int operand_check(command id, data_t node)
     case (MOV):
     case (ADD):
     case (SUB):
+        if (strtod(*(arg + 1), &ptr) != 0.0) /*check for illegal destination i.e immediate  number*/
+            error_hndl(INVALID_ARGUMENT);
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
         {
             return 1;
@@ -309,15 +321,18 @@ int operand_check(command id, data_t node)
         break;
         /*src hash method = 3. dec hash method = 3,5*/
     case (LEA):
-        if ((**arg == '@') && (is_register(*arg + 1)))
-        {
+        /*check source*/
+        if ((**arg == '@') && (is_register(*arg + 1))) /*source is a register*/
             error_hndl(UNS_SRC_HASHING);
-        }
+        if (strtod(*(arg), &ptr) != 0.0) /*source is a number*/
+            error_hndl(INVALID_ARGUMENT);
         if ((is_register(*arg)) >= 0)
         {
             error_hndl(UNS_REG_SRC);
         }
         check_register(*(arg + 1));
+        if (strtod(*(arg + 1), &ptr) != 0.0) /*check for illegal destination i.e immediate  number*/
+            error_hndl(INVALID_ARGUMENT);
         break;
         /*src hash method = NONE. dec hash method = 3,5*/
     case (NOT):
@@ -328,13 +343,11 @@ int operand_check(command id, data_t node)
     case (BNE):
     case (RED):
     case (JSR):
-        check_register(*arg);
+        if (strtod(*arg, &ptr) != 0.0)
+            error_hndl(INVALID_ARGUMENT);
         break;
     /*src hash method = NONE. dec hash method = 1,3,5*/
     case (PRN):
-        check_register(*arg);
-        break;
-        /*no operands.*/
     case (RTS):
     case (STOP):
         /* code */

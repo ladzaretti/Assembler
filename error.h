@@ -2,6 +2,8 @@
 #define ERROR_HANDLE_H
 /*the following function returns the program's error status*/
 int error();
+/*reset error flag*/
+int reset_error();
 /*the following function receives an error indicator as int and a line specification.
 the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
 int error_hndl(int);

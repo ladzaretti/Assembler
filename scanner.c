@@ -228,7 +228,7 @@ int data_size(data_t data, symbol_type id)
     {
         char **arg;
         int num;                 /*in this context, num is a dummy variable for use in get_num.
-                                    in the second scan, it will contain the interger extracted. */
+                                in the second scan, it will contain the interger extracted. */
         arg = (char **)data.arg; /*cast by pointer to get the data field*/
         if (!(data.narg))        /*check if arguments exists.*/
             return UNINITILIZED_DATA;
@@ -410,7 +410,7 @@ void *ccalloc(unsigned int size, unsigned int n_byte)
 /*the following function receives a node and inserts its represention into the data list as int.
 input:  - address of the linked list
         - address of a data node*/
-static void build_data_section(list_t *data_list, data_t *pdata)
+static void insert_data_block(list_t *data_list, data_t *pdata)
 {
     char **arg = (char **)pdata->arg;
     int i;
@@ -422,8 +422,9 @@ static void build_data_section(list_t *data_list, data_t *pdata)
         for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
         {
             int_node = ccalloc(1, sizeof(int));
-            get_num(*(arg + i), int_node); /*get int represention.*/
-            list_enqueue(data_list, int_node);
+            get_num(*(arg + i), int_node);     /*get int represention.*/
+            list_enqueue(data_list, int_node); /*enqueue into data section*/
+            DC++;
         }
     }
     else if (dat_type == STRING)
@@ -432,11 +433,12 @@ static void build_data_section(list_t *data_list, data_t *pdata)
         for (i = 0; i < strlen(*arg); i++) /*cycle thought all characters in the given string.*/
         {
             int_node = ccalloc(1, sizeof(int));
-            *int_node = *(*arg + i);
+            *int_node = *(*arg + i); /*get ASCII value*/
             list_enqueue(data_list, int_node);
+            DC++;
         }
-        /*terminate with zero*/
-        list_enqueue(data_list, int_node = ccalloc(1, sizeof(int)));
+        list_enqueue(data_list, int_node = ccalloc(1, sizeof(int))); /*terminate with zero*/
+        DC++;
     }
 }
 /*if given string is an integer, if true - create an absolute bin word.
@@ -473,28 +475,29 @@ external_t *build_external_node(char *label, int address)
     }
     else
     {
-        strcpy(node->label, label);
-        node->address = address;
+        strcpy(node->label, label); /*copy variable label*/
+        node->address = address;    /*set address*/
     }
     return node;
 }
 /*create instruction block from the given data.
 input:  - pdata as a pointer to parsed node.
         - symbol list.
+        - external list address, for storing external var reference.
 output  - linked list on an instruction block.*/
-static list_t *build_instruction_section(list_t *symbol_list, list_t *entry_list, data_t *pdata)
+static list_t *build_instruction_block(list_t *symbol_list, list_t *external_list, data_t *pdata)
 {
     char **arg = (char **)pdata->arg; /*get command arguments string array*/
     list_t *ins_block = ccalloc(1, sizeof(list_t));
     symbol_t *sym_data = NULL;
     int i;
-    int reg_flag = FALSE; /*register flag, in case the both the arguments are registers*/
-    bin_ins *ins_word = ccalloc(1, sizeof(bin_ins));
-    bin_data *ins_info = NULL;
-    bin_reg *ins_reg = NULL;
+    int reg_flag = FALSE;                            /*register flag, in case the both the arguments are registers*/
+    bin_ins *ins_word = ccalloc(1, sizeof(bin_ins)); /*instruction word*/
+    bin_data *ins_info = NULL;                       /*data word*/
+    bin_reg *ins_reg = NULL;                         /*register word*/
     /*create bin_ins, code op id*/
-    ins_word->op_code = cmd_identify(pdata->cmd);
-    list_enqueue(ins_block, (void *)ins_word);
+    ins_word->op_code = cmd_identify(pdata->cmd); /*set op code*/
+    list_enqueue(ins_block, (void *)ins_word);    /*enqueue instruction*/
     IC++;
     for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
     {
@@ -510,16 +513,13 @@ static list_t *build_instruction_section(list_t *symbol_list, list_t *entry_list
             else /*label is a destination. narg max=2. otherwise - error in the first scan or var declaration*/
                 ins_word->des_hash = HASH_3;
             if (sym_data->external == TRUE) /*the given label is external*/
-                ins_info->are = LINK_E;
+            {
+                external_t *node = build_external_node(*(arg + i), IC); /*insert into external list with current IC*/
+                list_enqueue(external_list, (void *)node);
+                ins_info->are = LINK_E; /*set ARE as external*/
+            }
             else
                 ins_info->are = LINK_R; /*set ARE as relocatable*/
-            if (sym_data->external)     /*if entry, insert into entry list with current IC*/
-            {
-                external_t *node = NULL;
-                printf("external = %s \n", (*(arg + i)));
-                node = build_external_node(*(arg + i), IC);
-                list_enqueue(entry_list, (void *)node);
-            }
             list_enqueue(ins_block, (void *)ins_info);
             IC++;
         }
@@ -565,42 +565,35 @@ static list_t *build_instruction_section(list_t *symbol_list, list_t *entry_list
     return ins_block;
 }
 /*create the binary represention of the given parsed list and the symbol table.
-assumed that the input data contains no errors from the initial scan.*/
-list_t *bin_translate(list_t list, list_t symbol_list)
+assumed that the input data contains no errors from the initial scan.
+if encountered, update external variable list.*/
+list_t *bin_translate(list_t list, list_t symbol_list, list_t **external_list)
 {
-    list_t *data_list = ccalloc(1, sizeof(list_t));
-    list_t *ins_list = ccalloc(1, sizeof(list_t));
-    list_t *external_list = ccalloc(1, sizeof(list_t));
-    node_t *p = list.head;
+    list_t *data_list = ccalloc(1, sizeof(list_t)); /*allocate list*/
+    list_t *ins_list = ccalloc(1, sizeof(list_t));  /*allocate list*/
+    node_t *p = list.head;                          /*get parced list head*/
+    *external_list = ccalloc(1, sizeof(list_t));    /*allocate list*/
     initilize_list(data_list);
     initilize_list(ins_list);
-    initilize_list(external_list);
-    IC = 100;
+    initilize_list(*external_list);
+    IC = 100; /*initialize IC and line counter for the second scan.*/
+    DC = 0;
     ln_cnt = 1;
-    while ((p) && (!error()))
+    while ((p) && (!error())) /*loop thought the parced data*/
     {
-        data_t *pdata = (data_t *)p->data;                    /*get parsed data section of the current node.*/
-        int ln_type = identify_line_type(pdata->cmd);         /*get line type.*/
-        if (ln_type == INS_LINE)                              /*node contains variable declaration.*/
-            build_data_section(data_list, (data_t *)p->data); /*insert data into data zone.*/
+        data_t *pdata = (data_t *)p->data;                   /*get parsed data section of the current node.*/
+        int ln_type = identify_line_type(pdata->cmd);        /*get line type.*/
+        if (ln_type == INS_LINE)                             /*node contains variable declaration.*/
+            insert_data_block(data_list, (data_t *)p->data); /*insert data into data zone.*/
         if (ln_type == CMD_LINE)
         {
-            list_t *temp_block = build_instruction_section(&symbol_list, external_list, pdata);
-            puts("----------------");
-            list_print(*temp_block, BINARY_T);
-            chain_lists(ins_list, temp_block);
+            list_t *temp_block = build_instruction_block(&symbol_list, *external_list, pdata); /*get instruction block*/
+            chain_lists(ins_list, temp_block);                                                 /*chain new block into the instruction linked list.*/
         }
-        /*combine data and ins lists*/
-        p = p->next;
-        ln_cnt++;
+        p = p->next; /*move to the next parsed word.*/
+        ln_cnt++;    /*inc line counter.*/
     }
-    printf("%d\n", IC);
     puts("__________________________________");
-    /*list_print(*ins_list, BINARY_T);
-    list_print(*data_list, BINARY_T);*/
-    list_print(*external_list, EXTERNAL_T);
-    list_free(external_list, EXTERNAL_T);
-    free(external_list);
-    chain_lists(ins_list, data_list);
-    return ins_list;
+    chain_lists(ins_list, data_list); /*chain data section to the end of the instruction section*/
+    return ins_list;                  /*return proccessed data.*/
 }

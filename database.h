@@ -32,6 +32,7 @@ typedef enum
     LBL_ILLEGAL_CHAR,         /*label contains illegal char.*/
     INVALID_REG_USE,          /*missing unary operator - @ on reg*/
     INVALID_UNARY_OP,         /*invalid @ unary operator's operand*/
+    INVALID_ARGUMENT,         /*invalid argument*/
     STR_UNPRINTABLE_CHR,      /*.string contains unprintable char*/
     STR_MISSING_BRACKET,      /*.string type declatation missing bracket*/
     TOO_FEW_OPERANDS,         /*too many operands for command*/
