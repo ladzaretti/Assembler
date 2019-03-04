@@ -26,6 +26,7 @@ typedef enum
     UDEF_CMD,                 /*undefined command*/
     UDEF_INS,                 /*undefined data*/
     UDEF_VAR,                 /*undefined variable*/
+    UDEF_REF,                 /*undefined reference*/
     FIRST_CHR_NON_ALPHA,      /*label first char isnt alphabetic*/
     LABEL_RES_WORD,           /*reserved word is used as a label*/
     LBL_LONG,                 /*label exceeds max len*/
@@ -43,7 +44,8 @@ typedef enum
     UNINITILIZED_DATA,        /*uninitilaied .data variable*/
     UNINITILIZED_STRING,      /*uninitilaied .string variable*/
     NON_INT,                  /*given variable is not an integer*/
-    CMD_AS_VAR                /*using a command as cmd argument*/
+    CMD_AS_VAR,               /*using a command as cmd argument*/
+    VAR_AS_CMD                /*using a var as cmd argument*/
 } error_list;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
 each record is define explicidly to avoid jumps in value.*/

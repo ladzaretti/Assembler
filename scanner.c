@@ -503,8 +503,16 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
     {
         if ((sym_data = search_label(symbol_list, *(arg + i)))) /*get symbol node for the currecnt label*/
         {
-            /*if (((sym_data->command) == TRUE) && (!((ins_word->op_code == JMP) || (ins_word->op_code == JSR))))
-                        error_hndl(CMD_AS_VAR);*/
+            /*if label is external, linker will deal with combination errors. as we have no info on the type of the label.*/
+            /*assuming that jmp,jsr and bne can operate on code only.*/
+            if (((ins_word->op_code == JMP) || (ins_word->op_code == JSR)||(ins_word->op_code == BNE)) && (sym_data->external == FALSE))
+            {
+                if ((sym_data->command) == FALSE) /*jmp and jsr can operate on labels that points on instructions*/
+                    error_hndl(VAR_AS_CMD);
+            }
+            else if (((sym_data->command) == TRUE) && (sym_data->external == FALSE))
+                error_hndl(CMD_AS_VAR);
+            /*all other commands can operate on label that points to data only*/
             ins_info = ccalloc(1, sizeof(bin_data)); /*allocate ins_info*/
             ins_info->data = sym_data->address;      /*copy label address to ins_info*/
             /*update des and src hash method*/
@@ -559,7 +567,12 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
                 IC++;
             }
             else
-                error_hndl(UDEF_VAR); /*otherwise print error = undefined variable*/
+            {
+                if ((ins_word->op_code == JMP) || (ins_word->op_code == JSR))
+                    error_hndl(UDEF_REF);
+                else
+                    error_hndl(UDEF_VAR);
+            } /*otherwise print error = undefined variable/reference*/
         }
     }
     return ins_block;
@@ -581,8 +594,8 @@ list_t *bin_translate(list_t list, list_t symbol_list, list_t **external_list)
     ln_cnt = 1;
     while ((p) && (!error())) /*loop thought the parced data*/
     {
-        data_t *pdata = (data_t *)p->data;                   /*get parsed data section of the current node.*/
-        int ln_type = identify_line_type(pdata->cmd);        /*get line type.*/
+        data_t *pdata = (data_t *)p->data;            /*get parsed data section of the current node.*/
+        int ln_type = identify_line_type(pdata->cmd); /*get line type.*/
         if (ln_type == INS_LINE)                             /*node contains variable declaration.*/
             insert_data_block(data_list, (data_t *)p->data); /*insert data into data zone.*/
         if (ln_type == CMD_LINE)

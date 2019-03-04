@@ -22,7 +22,7 @@ int error()
     return err;
 }
 /*reset error flag*/
-int reset_error()
+void reset_error()
 {
     err = FALSE;
 }
@@ -32,112 +32,94 @@ int error_hndl(error_list err_num)
 {
     if ((err_num >= 0))
         return err_num;
-    else /*handle errors from get_CSV_arg. all of them are comma specific.*/
+    else /*handle errors*/
     {
         err = TRUE;
         switch (err_num)
         {
         case ILLEGAL_COMMA:
             print_error("illegal_comma");
-            /*printf("error: illegal comma [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case CON_COMMA:
             print_error("multiple consecutive commas");
-            /*printf("error: multiple consecutive commas [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case EXT_TEXT:
             print_error("extraneous text after end of command");
-            /*printf("error: extraneous text after end of command [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case ALC_FAILED:
             printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
             break;
         case MIS_COMMA:
             print_error("missing comma");
-            /*printf("error: missing comma [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UDEF_CMD:
             print_error("undefined command name");
-            /*printf("error: undefined command name [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UDEF_INS:
             print_error("undefined data type");
-            /*printf("error: undefined data type [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case FIRST_CHR_NON_ALPHA:
             print_error("first character is not alphabetic");
-            /*printf("error: first character is not alphabetic [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LABEL_RES_WORD:
             print_error("reserved word as a label");
-            /*printf("error: reserved word as a label [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LBL_LONG:
             print_error("labal execceds maximum length");
-            /*printf("error: labal execceds maximum length [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LBL_ILLEGAL_CHAR:
             print_error("labal contains illegal characters");
-            /*printf("error: labal contains illegal characters [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case INVALID_REG_USE:
             print_error("invalid register usage, missing unary operator");
-            /*printf("error: invalid register usage, missing unary operator - @ [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case INVALID_ARGUMENT:
             print_error("invalid argument");
-            /*printf("error: invalid register usage, missing unary operator - @ [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case INVALID_UNARY_OP:
             print_error("invalid @ unary operator's operand, expecting register");
-            /*printf("error: invalid @ unary operator's operand, expecting register [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case STR_UNPRINTABLE_CHR:
             print_error("string contains unprintable characters");
-            /*check for unprintable chars*/
-            /*printf("error: string contains unprintable characters [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case STR_MISSING_BRACKET:
             print_error("missing brackets in string");
-            /*printf("error: missing brackets in string [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case TOO_FEW_OPERANDS:
             print_error("missing operands for given command");
-            /*printf("error: missing operands for given command [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case TOO_MANY_OPERANDS:
             print_error("too many operands for given command");
-            /*printf("error: too many operands for given command [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UNS_REG_SRC:
             print_error("lea - register as a source is unsupported");
-            /*printf("error: lea - register as a source is unsupported [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UNS_SRC_HASHING:
             print_error("unsupported source hashing method");
-            /*printf("error: unsupported source hashing method [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case LABEL_EXISTS:
             print_error("label already exists");
-            /*printf("error: label already exists [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UNINITILIZED_DATA:
             print_error("uninitilaied .data variable");
-            /*printf("error: uninitilaied .data variable [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case UNINITILIZED_STRING:
             print_error("uninitilaied .string variable");
-            /*printf("error: uninitilaied .string variable [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case NON_INT:
             print_error("argument is not an integer");
-            /*printf("error: argument is not an integer [%s.AS ln %d]\n", file_name, ln_cnt);*/
             break;
         case CMD_AS_VAR:
-            print_error("using cmd label as var");
+            print_error("function cannot operate on a command");
+            break;
+        case VAR_AS_CMD:
+            print_error("function cannot operate on a variable");
             break;
         case UDEF_VAR:
             print_error("undefined variable");
+            break;
+        case UDEF_REF:
+            print_error("undefined reference");
             break;
         }
     }
@@ -199,7 +181,7 @@ int identify_line_type(char *cmd)
         return UDEF_CMD;
     if (cmd_id >= 0)
         return CMD_LINE; /*the line is a command.*/
-    return INS_LINE;     /*the line must be an instruction.*/
+    return INS_LINE; /*the line must be an instruction.*/
 }
 /*check if label contains illegal characters or execced allowed length, argument is a string.
 return TRUE if label is valid, otherwise the error code is returned.*/
