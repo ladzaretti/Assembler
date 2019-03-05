@@ -33,10 +33,10 @@ int main(int argc, char **argv)
             if ((parsed_list.head) && (error() == FALSE)) /*check if data exists and encountered no errors*/
             {
                 instruction_list = bin_translate(parsed_list, symbol_list, &external_list);
-                list_print(*instruction_list, BINARY_T);
+                fprint_list(stdout, *instruction_list, BINARY_T);
                 list_free(instruction_list, BINARY_T);
                 free(instruction_list);
-                list_print(*external_list, EXTERNAL_T);
+                fprint_list(stdout, *external_list, EXTERNAL_T);
                 list_free(external_list, EXTERNAL_T);
                 free(external_list);
             }

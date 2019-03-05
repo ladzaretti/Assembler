@@ -91,7 +91,8 @@ typedef struct data
     char *label;
     char *cmd;
     char **arg;
-    int narg;
+    unsigned int narg;
+    unsigned int line; /*save line, as entry/extern are pushed. and the rest are enqueued*/
 } data_t;
 typedef struct entry
 {

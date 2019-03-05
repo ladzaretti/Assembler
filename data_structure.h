@@ -1,8 +1,13 @@
 #ifndef DATA_STRUCT_H
 #define DATA_STRUCT_H
 #include "database.h"
-/*print a list with given data type. the arguments are list and data type.*/
-void list_print(list_t, int);
+/*print generic list to stream.
+the type of the node is passed as an enum entry.
+types supported:    - DATA_T = 0
+                    - SYMBOL_T = 1
+                    - BINARY_T = 2
+                    - EXTERNAL_T = 3*/
+void fprint_list(FILE *, list_t, int);
 /*the following function gets a pointer to a list. the function frees it and all of its nodes. 
 arg are the address of the list and the data type of its nodes.*/
 void list_free(list_t *, int);

@@ -69,75 +69,80 @@ void list_free(list_t *list, int type)
     }
 }
 /*the following function prints the fields of a data_t object. receives data_t. return none.*/
-static void print_dt(void *node)
+static void fprint_dt(FILE *stream, void *node)
 {
     data_t *p = (data_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
     puts("__________________________________");
+    fprintf(stream, "at line = %d\n", (*p).line);
     if ((*p).label) /*if label exists*/
-        printf("label = <%s>\n", (*p).label);
+        fprintf(stream, "label = <%s>\n", (*p).label);
     if ((*p).cmd) /*if cmd exists*/
-        printf("cmd  = <%s>\n", (*p).cmd);
+        fprintf(stream, "cmd  = <%s>\n", (*p).cmd);
     if (((*p).narg) > 0) /*if there are arguments.*/
     {
         int i = 0;
-        printf("#arg = %d\n", (*p).narg);
+        fprintf(stream, "#arg = %d\n", (*p).narg);
         for (; i < (*p).narg; i++)
-            printf("<%s>", *(p->arg + i));
-        printf("\n");
+            fprintf(stream, "<%s>", *(p->arg + i));
+        fprintf(stream, "\n");
     }
-    puts("__________________________________");
+    fputs("__________________________________\n", stream);
 }
 /*print the binary represention of a given variable of size b_size .
 input the address of the desired variable and its size in bits.*/
-void binary_print(void *num, int b_size)
+void fprint_binary(FILE *stream, void *num, int b_size)
 {
     uint64_t mask = 1;
     int i = 0;
     mask <<= b_size - 1;                /*move first bit to the end of the represention.*/
     for (; i < b_size; i++, mask >>= 1) /*print bits*/
     {
-        printf("%s", *(uint64_t *)(num)&mask ? "1" : "0");
+        fprintf(stream, "%s", *(uint64_t *)(num)&mask ? "1" : "0");
     }
-    printf("\n");
+    fprintf(stream, "\n");
 }
 /*intermediate function from the generic list printing to the generic binary print.*/
-static void print_machine_word(void *pnum)
+static void fprint_machine_word(FILE *stream, void *pnum)
 {
-    binary_print(pnum, WORD_SIZE);
+    fprint_binary(stream, pnum, WORD_SIZE);
 }
 /*the following function prints the fields of a symbol_t object. receives data_t. return none.*/
-static void print_sym(void *node)
+static void fprint_symbol(FILE *stream, void *node)
 {
     symbol_t *p = (symbol_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
-    puts("__________________________________");
+    fputs("__________________________________\n", stream);
     if ((*p).label) /*if label exists*/
-        printf("label=<%s>|", (*p).label);
-    printf("address=<%d>|", (*p).address);
-    printf("command=<%s>|", (*p).command == 1 ? "true" : "false");
-    printf("external=<%s>|", (*p).external == 1 ? "true" : "false");
-    printf("entry=<%s>\n", (*p).entry == 1 ? "true" : "false");
-    puts("__________________________________");
+        fprintf(stream, "label=<%s>|", (*p).label);
+    fprintf(stream, "address=<%d>|", (*p).address);
+    fprintf(stream, "command=<%s>|", (*p).command == 1 ? "true" : "false");
+    fprintf(stream, "external=<%s>|", (*p).external == 1 ? "true" : "false");
+    fprintf(stream, "entry=<%s>\n", (*p).entry == 1 ? "true" : "false");
+    fputs("__________________________________\n", stream);
 }
 /*the following function prints the fields of a data_t object. receives data_t. return none.*/
-static void print_entry(void *node)
+static void fprint_entry(FILE *stream, void *node)
 {
     external_t *p = (external_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
-    puts("__________________________________");
+    fputs("__________________________________\n", stream);
     if ((*p).label) /*if label exists*/
-        printf("label = <%s>\n", (*p).label);
-    printf("address  = <%d>\n", (*p).address);
-    puts("__________________________________");
+        fprintf(stream, "label = <%s>\n", (*p).label);
+    fprintf(stream, "address  = <%d>\n", (*p).address);
+    fputs("__________________________________\n", stream);
 }
-/*the following function prints the given generic list, the type of the node is passed as an enum entry.
-print list with given data type.*/
-void list_print(list_t list, int type)
+/*print generic list to stream.
+the type of the node is passed as an enum entry.
+types supported:    - DATA_T = 0
+                    - SYMBOL_T = 1
+                    - BINARY_T = 2
+                    - EXTERNAL_T = 3*/
+void fprint_list(FILE *stream, list_t list, int type)
 {
-    void (*fp_prnt_dt[])(void *) = {&print_dt, &print_sym, &print_machine_word, &print_entry}; /*array of printing functions, sorted by type.*/
-    ptr h = list.head;                                                                         /*set pointer to head.*/
-    while (h)                                                                                  /*iterate thought all its nodes*/
+    void (*fp_prnt_dt[])(FILE *, void *) = {&fprint_dt, &fprint_symbol, &fprint_machine_word, &fprint_entry}; /*array of printing functions, sorted by type.*/
+    ptr h = list.head;                                                                                        /*set pointer to head.*/
+    while (h)                                                                                                 /*iterate thought all its nodes*/
     {
-        (*fp_prnt_dt[type])((void *)h->data); /*activate printing by type. print node.*/
-        h = h->next;                          /*advance to the next node.*/
+        (*fp_prnt_dt[type])(stream, (void *)h->data); /*activate printing by type. print node.*/
+        h = h->next;                                  /*advance to the next node.*/
     }
 }
 /*the following function receives a pointer to a linked list and a generic data pointer.

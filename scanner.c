@@ -388,11 +388,11 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
         }                                          /*end of symbol table creation block.*/
         free(temp);                                /*free current line string.*/
         ln_cnt++;
-    }                                       /*end of input stream.*/
-    symbol_table_add_IC(symbol_list);       /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
-    update_symbol_entry(list, symbol_list); /*update table on entry property*/
-    list_print(*symbol_list, SYMBOL_T);     /*print symbol table*/
-    list_print(*list, DATA_T);              /*print list*/
+    }                                            /*end of input stream.*/
+    symbol_table_add_IC(symbol_list);            /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
+    update_symbol_entry(list, symbol_list);      /*update table on entry property*/
+    fprint_list(stdout, *symbol_list, SYMBOL_T); /*print symbol table*/
+    fprint_list(stdout, *list, DATA_T);          /*print list*/
 }
 /*allocate using calloc one block of size n_byte bytes.
 the function checks if allocation was successful.*/
@@ -505,7 +505,7 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
         {
             /*if label is external, linker will deal with combination errors. as we have no info on the type of the label.*/
             /*assuming that jmp,jsr and bne can operate on code only.*/
-            if (((ins_word->op_code == JMP) || (ins_word->op_code == JSR)||(ins_word->op_code == BNE)) && (sym_data->external == FALSE))
+            if (((ins_word->op_code == JMP) || (ins_word->op_code == JSR) || (ins_word->op_code == BNE)) && (sym_data->external == FALSE))
             {
                 if ((sym_data->command) == FALSE) /*jmp and jsr can operate on labels that points on instructions*/
                     error_hndl(VAR_AS_CMD);
@@ -591,11 +591,11 @@ list_t *bin_translate(list_t list, list_t symbol_list, list_t **external_list)
     initilize_list(*external_list);
     IC = 100; /*initialize IC and line counter for the second scan.*/
     DC = 0;
-    ln_cnt = 1;
     while ((p) && (!error())) /*loop thought the parced data*/
     {
-        data_t *pdata = (data_t *)p->data;            /*get parsed data section of the current node.*/
-        int ln_type = identify_line_type(pdata->cmd); /*get line type.*/
+        data_t *pdata = (data_t *)p->data;                   /*get parsed data section of the current node.*/
+        int ln_type = identify_line_type(pdata->cmd);        /*get line type.*/
+        ln_cnt = pdata->line;                                /*as entry/extern are pushed. and the rest are enqueued. -> list is not in sync with input file. for correct error indication.*/
         if (ln_type == INS_LINE)                             /*node contains variable declaration.*/
             insert_data_block(data_list, (data_t *)p->data); /*insert data into data zone.*/
         if (ln_type == CMD_LINE)

@@ -290,5 +290,6 @@ data_t *get_data(char **src)
     }
     else if (strlen(*src))                                       /*if the reminder (=arguments) is non empty.*/
         error_hndl(node->narg = get_CSV_arg(src, &(node->arg))); /*get arguments and check arguments list for comma specific errors.*/
+    node->line = ln_cnt;
     return node;
 }
