@@ -24,19 +24,31 @@ int main(int argc, char **argv)
             printf("file <%s> does not exist.\n", file_name);
         else
         {
-            puts(file_name);
             /*first scan*/
             initial_scan(&symbol_list, &parsed_list, fp);
             /*second scan*/
-            printf("DC=%d. IC=%d\n", DC, IC);
-            printf("error = %s\n", error() == TRUE ? "TRUE" : "FALSE");
+            /*printf("DC=%d. IC=%d: %d\n", DC, IC, ln_cnt);
+            printf("error = %s\n", error() == TRUE ? "TRUE" : "FALSE");*/
             if ((parsed_list.head) && (error() == FALSE)) /*check if data exists and encountered no errors*/
             {
                 instruction_list = bin_translate(parsed_list, symbol_list, &external_list);
-                fprint_list(stdout, *instruction_list, BINARY_T);
-                list_free(instruction_list, BINARY_T);
+                if (instruction_list->head)
+                {
+                    fprintf(stdout, "%d %d\n", IC - 100, DC);
+                    fprint_list(stdout, *instruction_list, BASE64_P);
+                }
+                if (external_list->head) /*if external list isnt empty, create .ext file*/
+                {
+                    puts("external list:");
+                    fprint_list(stdout, *external_list, EXTERNAL_T);
+                }
+                if (has_entry(symbol_list)) /*if entry declared, create .ent file*/
+                {
+                    puts("entry list:");
+                    fprint_list(stdout, symbol_list, ENTRT_P);
+                }
+                list_free(instruction_list, INT_BIN_T);
                 free(instruction_list);
-                fprint_list(stdout, *external_list, EXTERNAL_T);
                 list_free(external_list, EXTERNAL_T);
                 free(external_list);
             }

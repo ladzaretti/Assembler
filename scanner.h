@@ -49,4 +49,7 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp);
 assumed that the input data contains no errors from the initial scan.
 if encountered, update external variable list.*/
 list_t *bin_translate(list_t list, list_t symbol_list, list_t **);
+/*check if the given symbol list contains nodes 
+which are entries.*/
+int has_entry(list_t);
 #endif

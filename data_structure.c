@@ -4,10 +4,23 @@
 #include <string.h>
 #include "database.h"
 #define WORD_SIZE 12
+/*calloc with allocation check.*/
+void *ccalloc(unsigned int size, unsigned int n_byte)
+{
+    void *vessel = (void *)calloc(size, n_byte);
+    if (vessel)
+        return vessel;
+    else
+    {
+        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+        return NULL;
+    }
+}
 /*initilize linked list with NULL.
 input - address of a list.*/
-void initilize_list(list_t *list)
+void initilize_list(list_t *list, unsigned int type)
 {
+    list->type = type;
     list->head = NULL; /*terminate the empty list*/
     list->tail = NULL; /*terminate the empty list*/
 }
@@ -90,7 +103,7 @@ static void fprint_dt(FILE *stream, void *node)
 }
 /*print the binary represention of a given variable of size b_size .
 input the address of the desired variable and its size in bits.*/
-void fprint_binary(FILE *stream, void *num, int b_size)
+static void fprint_binary(FILE *stream, void *num, int b_size)
 {
     uint64_t mask = 1;
     int i = 0;
@@ -119,27 +132,41 @@ static void fprint_symbol(FILE *stream, void *node)
     fprintf(stream, "entry=<%s>\n", (*p).entry == 1 ? "true" : "false");
     fputs("__________________________________\n", stream);
 }
-/*the following function prints the fields of a data_t object. receives data_t. return none.*/
+/*prints to stream entry variables from given symbol list.*/
 static void fprint_entry(FILE *stream, void *node)
 {
+    symbol_t *p = (symbol_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
+    if ((*p).entry == TRUE)
+        if ((*p).label) /*if label exists*/
+            fprintf(stream, "%s\t%d\n", (*p).label, (*p).address);
+}
+/*the following function prints the fields of a data_t object. receives data_t. return none.*/
+static void fprint_external(FILE *stream, void *node)
+{
     external_t *p = (external_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
-    fputs("__________________________________\n", stream);
-    if ((*p).label) /*if label exists*/
-        fprintf(stream, "label = <%s>\n", (*p).label);
-    fprintf(stream, "address  = <%d>\n", (*p).address);
-    fputs("__________________________________\n", stream);
+    if ((*p).label)                     /*if label exists*/
+
+        fprintf(stream, "%s\t%d\n", (*p).label, (*p).address);
+}
+static void machine_word_b64print(FILE *stream, void *word)
+{
+    const char base64[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
+    unsigned int mask = 077;
+    unsigned int MS6bits = *(int *)word;
+    MS6bits >>= 6;                                                                  /*contains the 6 MSB of the given word.*/
+    fprintf(stream, "%c%c\n", base64[MS6bits & mask], base64[*(int *)word & mask]); /*print to stream the 12bit represention in base64*/
 }
 /*print generic list to stream.
 the type of the node is passed as an enum entry.
 types supported:    - DATA_T = 0
                     - SYMBOL_T = 1
-                    - BINARY_T = 2
+                    - INT_BIN_T = 2
                     - EXTERNAL_T = 3*/
 void fprint_list(FILE *stream, list_t list, int type)
 {
-    void (*fp_prnt_dt[])(FILE *, void *) = {&fprint_dt, &fprint_symbol, &fprint_machine_word, &fprint_entry}; /*array of printing functions, sorted by type.*/
-    ptr h = list.head;                                                                                        /*set pointer to head.*/
-    while (h)                                                                                                 /*iterate thought all its nodes*/
+    void (*fp_prnt_dt[])(FILE *, void *) = {&fprint_dt, &fprint_symbol, &fprint_machine_word, &fprint_external, &fprint_entry, &machine_word_b64print}; /*array of printing functions, sorted by type.*/
+    ptr h = list.head;                                                                                                                                  /*set pointer to head.*/
+    while (h)                                                                                                                                           /*iterate thought all its nodes*/
     {
         (*fp_prnt_dt[type])(stream, (void *)h->data); /*activate printing by type. print node.*/
         h = h->next;                                  /*advance to the next node.*/
@@ -203,6 +230,11 @@ if the label exists, its node address is return to the caller. otherwise NULL is
 void *search_label(list_t *sym_t, char *label)
 {
     ptr h = sym_t->head; /*set pointer to the head of the list.*/
+    if (sym_t->type != SYMBOL_T)
+    {
+        printf("[%s] wrong list type\n", "search_label"); /*__func__/__FUNCTION__ not supported in C90*/
+        return NULL;
+    }
     while (h)
     {
         symbol_t *p = (symbol_t *)h->data; /*set pointer to the data field of the list (cast by pointer).*/
@@ -215,6 +247,11 @@ void *search_label(list_t *sym_t, char *label)
 /*chain given lists.*/
 void chain_lists(list_t *dest, list_t *src)
 {
+    if (dest->type != src->type)
+    {
+        printf("[%s] list type mismatch \n", "chain_lists"); /*__func__/__FUNCTION__ not supported in C90*/
+        return;
+    }
     if (!(dest->head)) /*dest list is empty*/
     {
         dest->head = src->head;

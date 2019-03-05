@@ -167,6 +167,11 @@ if successfull, new node address is return. if not null is returned.*/
 symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
 {
     symbol_t *psymbol = NULL; /*new symbol node.*/
+    if (sym_table->type != SYMBOL_T)
+    {
+        printf("[%s] wrong list type\n", "insert_symbol"); /*__func__/__FUNCTION__ not supported in C90*/
+        return NULL;
+    }
     switch (type)
     {
     case COM:
@@ -267,6 +272,11 @@ void build_symbol_type(list_t *symbol_list, data_t *pdata)
 {
     /*the following switch cases will be executed only if there is a valid cmd/ins line. 
                         otherwise defualt case will be executed.*/
+    if (symbol_list->type != SYMBOL_T)
+    {
+        printf("[%s] wrong list type\n", "build_symbol_type"); /*__func__/__FUNCTION__ not supported in C90*/
+        return;
+    }
     switch (error_hndl(identify_line_type(pdata->cmd))) /*switch on line type.*/
     {
         symbol_type id;
@@ -316,7 +326,12 @@ void symbol_table_add_IC(list_t *symbol_list)
 {
     ptr h = symbol_list->head; /*get list head*/
     symbol_t *sym;             /*pointer to the data field*/
-    while (h)                  /*scan symbol table and update DC addresses by adding IC.*/
+    if (symbol_list->type != SYMBOL_T)
+    {
+        printf("[%s] wrong list type\n", "symbol_table_add_IC"); /*__func__/__FUNCTION__ not supported in C90*/
+        return;
+    }
+    while (h) /*scan symbol table and update DC addresses by adding IC.*/
     {
         sym = h->data;
         h = h->next;
@@ -328,9 +343,14 @@ void symbol_table_add_IC(list_t *symbol_list)
 input:  - parsed data linked list
         - symbol table represented as linked list.
 output: none.*/
-static void update_symbol_entry(list_t *list, list_t *symbol_list)
+static void update_symbol_entry(list_t *parsed_list, list_t *symbol_list)
 {
-    node_t *p = list->head; /*head pointer*/
+    node_t *p = parsed_list->head; /*head pointer*/
+    if ((symbol_list->type != SYMBOL_T) || (parsed_list->type != DATA_T))
+    {
+        printf("[%s] wrong list type\n", "update_symbol_entry"); /*__func__/__FUNCTION__ not supported in C90*/
+        return;
+    }
     while (p)
     {
         data_t *data = (data_t *)p->data;
@@ -358,15 +378,15 @@ static void update_symbol_entry(list_t *list, list_t *symbol_list)
 input:  -   addresses of two empty linked lists. one for the parsed data and the other 
             for the symbol table. 
         -   input stream.*/
-void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
+void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
 {
     char *line = NULL;    /*string for a line from AS file*/
     data_t *pdata = NULL; /*pointer to store data from given line, will be used as the data section in the linked list.*/
     ln_cnt = 1;           /*reset line counter before new file feed.*/
     IC = 100;
     DC = 0;
-    initilize_list(list);        /*initialize a linked list*/
-    initilize_list(symbol_list); /*initialize a linked list*/
+    initilize_list(parsed_list, DATA_T);   /*initialize a linked list*/
+    initilize_list(symbol_list, SYMBOL_T); /*initialize a linked list*/
     while (!feof(fp))
     {
         char *temp = NULL;              /*pointer the beginning of given line. for future free.*/
@@ -381,49 +401,41 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp)
             if (!check_ln_label(&pdata, &temp, &ln_cnt))
                 continue;
             if (!(strcmp(pdata->cmd, ".extern")) || !(strcmp(pdata->cmd, ".entry")))
-                list_push(list, (void *)pdata);
+                list_push(parsed_list, (void *)pdata);
             else
-                list_enqueue(list, (void *)pdata); /*enqueue new data into linked list.*/
-            build_symbol_type(symbol_list, pdata); /*add to symbol list if valid.*/
-        }                                          /*end of symbol table creation block.*/
-        free(temp);                                /*free current line string.*/
+                list_enqueue(parsed_list, (void *)pdata); /*enqueue new data into linked list.*/
+            build_symbol_type(symbol_list, pdata);        /*add to symbol list if valid.*/
+        }                                                 /*end of symbol table creation block.*/
+        free(temp);                                       /*free current line string.*/
         ln_cnt++;
-    }                                            /*end of input stream.*/
-    symbol_table_add_IC(symbol_list);            /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
-    update_symbol_entry(list, symbol_list);      /*update table on entry property*/
-    fprint_list(stdout, *symbol_list, SYMBOL_T); /*print symbol table*/
-    fprint_list(stdout, *list, DATA_T);          /*print list*/
-}
-/*allocate using calloc one block of size n_byte bytes.
-the function checks if allocation was successful.*/
-void *ccalloc(unsigned int size, unsigned int n_byte)
-{
-    void *vessel = (void *)calloc(size, n_byte);
-    if (vessel)
-        return vessel;
-    else
-    {
-        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
-        return NULL;
-    }
+    }                                              /*end of input stream.*/
+    symbol_table_add_IC(symbol_list);              /*update address in symbol list according to IC. add IC to all addresses where external = FALSE and not a command.*/
+    update_symbol_entry(parsed_list, symbol_list); /*update table on entry property*/
+    /*fprint_list(stdout, *symbol_list, SYMBOL_T);   print symbol table*/
+    /*fprint_list(stdout, *parsed_list, DATA_T);     print list*/
 }
 /*the following function receives a node and inserts its represention into the data list as int.
 input:  - address of the linked list
         - address of a data node*/
-static void insert_data_block(list_t *data_list, data_t *pdata)
+static void insert_data_block(list_t *bin_data_list, data_t *pdata)
 {
     char **arg = (char **)pdata->arg;
     int i;
     int *int_node = NULL;
     int dat_type = ins_identify(pdata->cmd);
+    if (bin_data_list->type != INT_BIN_T)
+    {
+        printf("[%s] wrong list type\n", "insert_data_block"); /*__func__/__FUNCTION__ not supported in C90*/
+        return;
+    }
     if (dat_type == DATA)
     {
         /*unfoled and insert into data list*/
         for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
         {
             int_node = ccalloc(1, sizeof(int));
-            get_num(*(arg + i), int_node);     /*get int represention.*/
-            list_enqueue(data_list, int_node); /*enqueue into data section*/
+            get_num(*(arg + i), int_node);         /*get int represention.*/
+            list_enqueue(bin_data_list, int_node); /*enqueue into data section*/
             DC++;
         }
     }
@@ -434,10 +446,10 @@ static void insert_data_block(list_t *data_list, data_t *pdata)
         {
             int_node = ccalloc(1, sizeof(int));
             *int_node = *(*arg + i); /*get ASCII value*/
-            list_enqueue(data_list, int_node);
+            list_enqueue(bin_data_list, int_node);
             DC++;
         }
-        list_enqueue(data_list, int_node = ccalloc(1, sizeof(int))); /*terminate with zero*/
+        list_enqueue(bin_data_list, int_node = ccalloc(1, sizeof(int))); /*terminate with zero*/
         DC++;
     }
 }
@@ -461,18 +473,9 @@ bin_data *create_bin_int(char *arg, bin_ins *ins_word)
 returns null on failure, otherwise the address of the node.*/
 external_t *build_external_node(char *label, int address)
 {
-    external_t *node = (external_t *)calloc(1, sizeof(external_t));
-    if (!node)
-    {
-        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+    external_t *node = (external_t *)ccalloc(1, sizeof(external_t));
+    if (!(node->label = (char *)ccalloc((strlen(label) + 1), sizeof(char))))
         return NULL;
-    }
-    node->label = (char *)malloc(sizeof(char) * (strlen(label) + 1));
-    if (!(node->label))
-    {
-        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
-        return NULL;
-    }
     else
     {
         strcpy(node->label, label); /*copy variable label*/
@@ -488,16 +491,22 @@ output  - linked list on an instruction block.*/
 static list_t *build_instruction_block(list_t *symbol_list, list_t *external_list, data_t *pdata)
 {
     char **arg = (char **)pdata->arg; /*get command arguments string array*/
-    list_t *ins_block = ccalloc(1, sizeof(list_t));
+    list_t *bin_ins_block = ccalloc(1, sizeof(list_t));
     symbol_t *sym_data = NULL;
     int i;
     int reg_flag = FALSE;                            /*register flag, in case the both the arguments are registers*/
     bin_ins *ins_word = ccalloc(1, sizeof(bin_ins)); /*instruction word*/
     bin_data *ins_info = NULL;                       /*data word*/
     bin_reg *ins_reg = NULL;                         /*register word*/
+    if (symbol_list->type != SYMBOL_T)
+    {
+        printf("[%s] wrong list type\n", "build_instruction_block"); /*__func__/__FUNCTION__ not supported in C90*/
+        return NULL;
+    }
+    initilize_list(bin_ins_block, INT_BIN_T);
     /*create bin_ins, code op id*/
-    ins_word->op_code = cmd_identify(pdata->cmd); /*set op code*/
-    list_enqueue(ins_block, (void *)ins_word);    /*enqueue instruction*/
+    ins_word->op_code = cmd_identify(pdata->cmd);  /*set op code*/
+    list_enqueue(bin_ins_block, (void *)ins_word); /*enqueue instruction*/
     IC++;
     for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
     {
@@ -528,14 +537,14 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
             }
             else
                 ins_info->are = LINK_R; /*set ARE as relocatable*/
-            list_enqueue(ins_block, (void *)ins_info);
+            list_enqueue(bin_ins_block, (void *)ins_info);
             IC++;
         }
         else if (!sym_data) /*not a label*/
         {
             if ((ins_info = create_bin_int(*(arg + i), ins_word))) /*in case the arguments is an interger*/
             {
-                list_enqueue(ins_block, (void *)ins_info);
+                list_enqueue(bin_ins_block, (void *)ins_info);
                 IC++;
             }
             /*if reg - > insert into ins list, set reg flag as true*/
@@ -563,7 +572,7 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
                         ins_word->des_hash = HASH_5;
                     }
                 }
-                list_enqueue(ins_block, (void *)ins_reg);
+                list_enqueue(bin_ins_block, (void *)ins_reg);
                 IC++;
             }
             else
@@ -575,38 +584,61 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
             } /*otherwise print error = undefined variable/reference*/
         }
     }
-    return ins_block;
+    return bin_ins_block;
 }
 /*create the binary represention of the given parsed list and the symbol table.
 assumed that the input data contains no errors from the initial scan.
 if encountered, update external variable list.*/
-list_t *bin_translate(list_t list, list_t symbol_list, list_t **external_list)
+list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_list)
 {
-    list_t *data_list = ccalloc(1, sizeof(list_t)); /*allocate list*/
-    list_t *ins_list = ccalloc(1, sizeof(list_t));  /*allocate list*/
-    node_t *p = list.head;                          /*get parced list head*/
-    *external_list = ccalloc(1, sizeof(list_t));    /*allocate list*/
-    initilize_list(data_list);
-    initilize_list(ins_list);
-    initilize_list(*external_list);
+    list_t *bin_data_list = ccalloc(1, sizeof(list_t)); /*allocate list*/
+    list_t *bin_ins_list = ccalloc(1, sizeof(list_t));  /*allocate list*/
+    node_t *p = parsed_list.head;                       /*get parsed list head*/
+    *external_list = ccalloc(1, sizeof(list_t));        /*allocate list*/
+    if ((symbol_list.type != SYMBOL_T) || (parsed_list.type != DATA_T))
+    {
+        printf("[%s] wrong list type\n", "bin_translate"); /*__func__/__FUNCTION__ not supported in C90*/
+        return NULL;
+    }
+    initilize_list(bin_data_list, INT_BIN_T);
+    initilize_list(bin_ins_list, INT_BIN_T);
+    initilize_list(*external_list, EXTERNAL_T);
     IC = 100; /*initialize IC and line counter for the second scan.*/
     DC = 0;
     while ((p) && (!error())) /*loop thought the parced data*/
     {
-        data_t *pdata = (data_t *)p->data;                   /*get parsed data section of the current node.*/
-        int ln_type = identify_line_type(pdata->cmd);        /*get line type.*/
-        ln_cnt = pdata->line;                                /*as entry/extern are pushed. and the rest are enqueued. -> list is not in sync with input file. for correct error indication.*/
-        if (ln_type == INS_LINE)                             /*node contains variable declaration.*/
-            insert_data_block(data_list, (data_t *)p->data); /*insert data into data zone.*/
+        data_t *pdata = (data_t *)p->data;                       /*get parsed data section of the current node.*/
+        int ln_type = identify_line_type(pdata->cmd);            /*get line type.*/
+        ln_cnt = pdata->line;                                    /*as entry/extern are pushed. and the rest are enqueued. -> list is not in sync with input file. for correct error indication.*/
+        if (ln_type == INS_LINE)                                 /*node contains variable declaration.*/
+            insert_data_block(bin_data_list, (data_t *)p->data); /*insert data into data zone.*/
         if (ln_type == CMD_LINE)
         {
             list_t *temp_block = build_instruction_block(&symbol_list, *external_list, pdata); /*get instruction block*/
-            chain_lists(ins_list, temp_block);                                                 /*chain new block into the instruction linked list.*/
+            chain_lists(bin_ins_list, temp_block);                                             /*chain new block into the instruction linked list.*/
         }
         p = p->next; /*move to the next parsed word.*/
         ln_cnt++;    /*inc line counter.*/
     }
-    puts("__________________________________");
-    chain_lists(ins_list, data_list); /*chain data section to the end of the instruction section*/
-    return ins_list;                  /*return proccessed data.*/
+    chain_lists(bin_ins_list, bin_data_list); /*chain data section to the end of the instruction section*/
+    return bin_ins_list;                      /*return proccessed data.*/
+}
+/*check if the given symbol list contains nodes 
+which are entries.*/
+int has_entry(list_t list)
+{
+    node_t *p = list.head;     /*get symbol list head*/
+    if (list.type != SYMBOL_T) /*check list type.*/
+    {
+        printf("[%s] wrong list type\n", "has_entry"); /*__func__/__FUNCTION__ not supported in C90*/
+        return FALSE;
+    }
+    while (p)
+    {
+        symbol_t *pdata = (symbol_t *)p->data;
+        if (pdata->entry == TRUE)
+            return TRUE;
+        p = p->next;
+    }
+    return FALSE;
 }

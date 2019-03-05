@@ -82,8 +82,10 @@ enum node_type
 {
     DATA_T = 0,
     SYMBOL_T = 1,
-    BINARY_T = 2,
-    EXTERNAL_T = 3
+    INT_BIN_T = 2,
+    EXTERNAL_T = 3,
+    ENTRT_P = 4, /*for printing purposes. in actuallity is of type symbol_t*/
+    BASE64_P = 5 /*not an actual node, for printing purposes only*/
 };
 /*struct to store parsed line*/
 typedef struct data
@@ -118,6 +120,7 @@ typedef struct node
 /*generic list struct, contains head and tail pointers.*/
 typedef struct list
 {
+    unsigned int type : 3;
     ptr head;
     ptr tail;
 } list_t;
