@@ -383,7 +383,7 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
     char *line = NULL;    /*string for a line from AS file*/
     data_t *pdata = NULL; /*pointer to store data from given line, will be used as the data section in the linked list.*/
     ln_cnt = 1;           /*reset line counter before new file feed.*/
-    IC = 100;
+    IC = STR_ADDRESS;
     DC = 0;
     initilize_list(parsed_list, DATA_T);   /*initialize a linked list*/
     initilize_list(symbol_list, SYMBOL_T); /*initialize a linked list*/
@@ -603,7 +603,7 @@ list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_
     initilize_list(bin_data_list, INT_BIN_T);
     initilize_list(bin_ins_list, INT_BIN_T);
     initilize_list(*external_list, EXTERNAL_T);
-    IC = 100; /*initialize IC and line counter for the second scan.*/
+    IC = STR_ADDRESS; /*initialize IC and line counter for the second scan.*/
     DC = 0;
     while ((p) && (!error())) /*loop thought the parced data*/
     {
@@ -623,22 +623,57 @@ list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_
     chain_lists(bin_ins_list, bin_data_list); /*chain data section to the end of the instruction section*/
     return bin_ins_list;                      /*return proccessed data.*/
 }
-/*check if the given symbol list contains nodes 
-which are entries.*/
-int has_entry(list_t list)
-{
-    node_t *p = list.head;     /*get symbol list head*/
+/*create entry list from given symbol table*/
+list_t *create_entry_list(list_t list)
+{                          /*function is created to avoid printing new line in the end of the correspoding file.
+if the symbol table to be scanned, and then print only entries with entry flag, the generic printing function will print many extra new lines.
+basicly, all this trouble is to avoid printing extra \n in the end the output files.*/
+    node_t *p = list.head; /*get symbol list head*/
+    list_t *entry_list = ccalloc(1, sizeof(list_t));
+    int has_entry = FALSE; /*entry list creation indicator*/
+    if (!entry_list)
+        return NULL;
     if (list.type != SYMBOL_T) /*check list type.*/
     {
-        printf("[%s] wrong list type\n", "has_entry"); /*__func__/__FUNCTION__ not supported in C90*/
-        return FALSE;
+        printf("[%s] wrong list type\n", "create_entry_list"); /*__func__/__FUNCTION__ not supported in C90*/
+        return NULL;
     }
     while (p)
     {
         symbol_t *pdata = (symbol_t *)p->data;
         if (pdata->entry == TRUE)
-            return TRUE;
+        {
+            symbol_t *new_pdata = ccalloc(1, sizeof(symbol_t));
+            if (new_pdata)
+            {
+                has_entry = TRUE;                                                           /*set flag as true. entry list will contain atleast one node.*/
+                new_pdata->label = (char *)ccalloc(strlen(pdata->label) + 1, sizeof(char)); /*copy org node to entry, copying to avoid sharing nodes between list. otherwise, freeing the lists will be tricky.*/
+                strcpy(new_pdata->label, pdata->label);
+                new_pdata->address = pdata->address;
+            }
+            list_enqueue(entry_list, (void *)new_pdata);
+        }
         p = p->next;
     }
-    return FALSE;
+    if (has_entry)
+        return entry_list;
+    else
+    {
+        free(entry_list);
+        return NULL;
+    }
+}
+/*concatenate the given strings into a new string without changing the input.
+input - first argument is the beginning, the second string is the ending.
+return pointer to a new allocated string containing the result.*/
+char *strcat_new(const char *str, const char *end)
+{
+    char *cat = (char *)ccalloc(strlen(str) + strlen(end) + 1, sizeof(char));
+    if (cat)
+    {
+        strcpy(cat, str);
+        strcat(cat, end);
+        puts(cat);
+    }
+    return cat;
 }

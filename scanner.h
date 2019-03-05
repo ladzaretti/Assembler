@@ -49,7 +49,11 @@ void initial_scan(list_t *symbol_list, list_t *list, FILE *fp);
 assumed that the input data contains no errors from the initial scan.
 if encountered, update external variable list.*/
 list_t *bin_translate(list_t list, list_t symbol_list, list_t **);
-/*check if the given symbol list contains nodes 
-which are entries.*/
-int has_entry(list_t);
+/*create entry list from given symbol table.
+returns the address of the list to the caller. if empty, returns null*/
+list_t *create_entry_list(list_t);
+/*concatenate the given strings into a new string without changing the input.
+input - first argument is the beginning, the second string is the ending.
+return pointer to a new allocated string containing the result.*/
+char *strcat_new(const char *, const char *);
 #endif

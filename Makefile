@@ -24,7 +24,7 @@ error.o: error.c database.h
 	$(CC) $(CFLAGS) $< -o $@
 #delete executables and object files
 clean:
-	@rm -f *.o *.exe $(TARGET)
+	@rm -f *.o *.exe *.ent *.ob *.ext $(TARGET)
 	@echo Directory Cleaned
 loop:
 	@echo ***running:

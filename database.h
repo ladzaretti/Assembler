@@ -9,6 +9,7 @@
 #define FALSE 0
 #define REG_NUM 8 /*number of registers*/
 #define LABEL_MAX_LEN 31
+#define STR_ADDRESS 100
 extern const char cmd_string[16][5];
 extern const char ins_string[4][8];
 extern const char registers[8][4];

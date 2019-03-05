@@ -4,7 +4,9 @@
 #include <string.h>
 #include "database.h"
 #define WORD_SIZE 12
-/*calloc with allocation check.*/
+/*calloc with allocation check.
+first arg - blocks to allocate.
+second arg - block size.*/
 void *ccalloc(unsigned int size, unsigned int n_byte)
 {
     void *vessel = (void *)calloc(size, n_byte);
@@ -85,7 +87,7 @@ void list_free(list_t *list, int type)
 static void fprint_dt(FILE *stream, void *node)
 {
     data_t *p = (data_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
-    puts("__________________________________");
+    fprintf(stream, "__________________________________\n");
     fprintf(stream, "at line = %d\n", (*p).line);
     if ((*p).label) /*if label exists*/
         fprintf(stream, "label = <%s>\n", (*p).label);
@@ -99,7 +101,7 @@ static void fprint_dt(FILE *stream, void *node)
             fprintf(stream, "<%s>", *(p->arg + i));
         fprintf(stream, "\n");
     }
-    fputs("__________________________________\n", stream);
+    fprintf(stream, "__________________________________");
 }
 /*print the binary represention of a given variable of size b_size .
 input the address of the desired variable and its size in bits.*/
@@ -109,10 +111,7 @@ static void fprint_binary(FILE *stream, void *num, int b_size)
     int i = 0;
     mask <<= b_size - 1;                /*move first bit to the end of the represention.*/
     for (; i < b_size; i++, mask >>= 1) /*print bits*/
-    {
         fprintf(stream, "%s", *(uint64_t *)(num)&mask ? "1" : "0");
-    }
-    fprintf(stream, "\n");
 }
 /*intermediate function from the generic list printing to the generic binary print.*/
 static void fprint_machine_word(FILE *stream, void *pnum)
@@ -123,38 +122,36 @@ static void fprint_machine_word(FILE *stream, void *pnum)
 static void fprint_symbol(FILE *stream, void *node)
 {
     symbol_t *p = (symbol_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
-    fputs("__________________________________\n", stream);
+    fprintf(stream, "__________________________________\n");
     if ((*p).label) /*if label exists*/
         fprintf(stream, "label=<%s>|", (*p).label);
     fprintf(stream, "address=<%d>|", (*p).address);
     fprintf(stream, "command=<%s>|", (*p).command == 1 ? "true" : "false");
     fprintf(stream, "external=<%s>|", (*p).external == 1 ? "true" : "false");
     fprintf(stream, "entry=<%s>\n", (*p).entry == 1 ? "true" : "false");
-    fputs("__________________________________\n", stream);
+    fprintf(stream, "__________________________________");
 }
 /*prints to stream entry variables from given symbol list.*/
 static void fprint_entry(FILE *stream, void *node)
 {
     symbol_t *p = (symbol_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
-    if ((*p).entry == TRUE)
-        if ((*p).label) /*if label exists*/
-            fprintf(stream, "%s\t%d\n", (*p).label, (*p).address);
+    if ((*p).label)                 /*if label exists*/
+        fprintf(stream, "%s\t%d", (*p).label, (*p).address);
 }
 /*the following function prints the fields of a data_t object. receives data_t. return none.*/
 static void fprint_external(FILE *stream, void *node)
 {
     external_t *p = (external_t *)node; /*cast by pointer, cast the generic void * pointer to data_t.*/
     if ((*p).label)                     /*if label exists*/
-
-        fprintf(stream, "%s\t%d\n", (*p).label, (*p).address);
+        fprintf(stream, "%s\t%d", (*p).label, (*p).address);
 }
 static void machine_word_b64print(FILE *stream, void *word)
 {
     const char base64[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
     unsigned int mask = 077;
     unsigned int MS6bits = *(int *)word;
-    MS6bits >>= 6;                                                                  /*contains the 6 MSB of the given word.*/
-    fprintf(stream, "%c%c\n", base64[MS6bits & mask], base64[*(int *)word & mask]); /*print to stream the 12bit represention in base64*/
+    MS6bits >>= 6;                                                                /*contains the 6 MSB of the given word.*/
+    fprintf(stream, "%c%c", base64[MS6bits & mask], base64[*(int *)word & mask]); /*print to stream the 12bit represention in base64*/
 }
 /*print generic list to stream.
 the type of the node is passed as an enum entry.
@@ -170,6 +167,8 @@ void fprint_list(FILE *stream, list_t list, int type)
     {
         (*fp_prnt_dt[type])(stream, (void *)h->data); /*activate printing by type. print node.*/
         h = h->next;                                  /*advance to the next node.*/
+        if (h)
+            fprintf(stream, "\n"); /*if there is more data to print, insert new line*/
     }
 }
 /*the following function receives a pointer to a linked list and a generic data pointer.
