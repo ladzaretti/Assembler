@@ -3,21 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "database.h"
+#include "utility.h"
 #define WORD_SIZE 12
-/*calloc with allocation check.
-first arg - blocks to allocate.
-second arg - block size.*/
-void *ccalloc(unsigned int size, unsigned int n_byte)
-{
-    void *vessel = (void *)calloc(size, n_byte);
-    if (vessel)
-        return vessel;
-    else
-    {
-        printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
-        return NULL;
-    }
-}
 /*initilize linked list with NULL.
 input - address of a list.*/
 void initilize_list(list_t *list, unsigned int type)
@@ -93,7 +80,7 @@ static void fprint_dt(FILE *stream, void *node)
         fprintf(stream, "label = <%s>\n", (*p).label);
     if ((*p).cmd) /*if cmd exists*/
         fprintf(stream, "cmd  = <%s>\n", (*p).cmd);
-    if (((*p).narg) > 0) /*if there are arguments.*/
+    if ((((*p).narg) > 0) && ((*p).arg)) /*if there are arguments.*/
     {
         int i = 0;
         fprintf(stream, "#arg = %d\n", (*p).narg);
@@ -263,4 +250,26 @@ void chain_lists(list_t *dest, list_t *src)
         src->head->prev = dest->head;
     }
     free(src);
+}
+/*output given list into file with the given extention.
+input:  - linked list
+        - type of the list
+        - desired extension*/
+void list_to_file(list_t list, int type, char *extention)
+{
+    char *file_with_ext = NULL;
+    FILE *fp = NULL;
+    if (list.head) /*if list isnt empty, create file*/
+    {
+        file_with_ext = strcat_new(file_name, extention);
+        if (!file_with_ext)
+            return;
+        puts(file_with_ext);            /*print new file name to stdout*/
+        fp = fopen(file_with_ext, "w"); /*open file*/
+        if (type == BASE64_P)
+            fprintf(fp, "%d %d\n", IC - STR_ADDRESS, DC);
+        fprint_list(fp, list, type);
+        fclose(fp);
+        free(file_with_ext);
+    }
 }

@@ -5,6 +5,7 @@
 #include "data_structure.h"
 #include "error.h"
 #include "parser.h"
+#include "utility.h"
 /*address/direct word struct*/
 typedef struct
 {
@@ -91,7 +92,7 @@ char *path_fname_extract(const char *Fpath)
 }
 /*use argv to a open file, argv can contain an extension or not.
 file_name will be asigned with the extensionless file name.*/
-FILE *dy_fopen(const char *argv, char **file_name)
+FILE *dyn_fopen(const char *argv, char **file_name)
 {
     int end_index = strlen(argv);
     if ((argv[end_index - 3] == '.') && (argv[end_index - 2] == 'A') && (argv[end_index - 1] == 'S'))
@@ -663,17 +664,29 @@ basicly, all this trouble is to avoid printing extra \n in the end the output fi
         return NULL;
     }
 }
-/*concatenate the given strings into a new string without changing the input.
-input - first argument is the beginning, the second string is the ending.
-return pointer to a new allocated string containing the result.*/
-char *strcat_new(const char *str, const char *end)
+/*preform the final scan on the given parsed data.
+input:  - linked list containing the parsed user input
+        - a symbol list containing labels
+the function creates the requierd output files to the current directory*/
+void final_scan(list_t parsed_list, list_t symbol_list)
 {
-    char *cat = (char *)ccalloc(strlen(str) + strlen(end) + 1, sizeof(char));
-    if (cat)
+    list_t *entry_list = NULL;
+    list_t *instruction_list = NULL;                                            /* linked list to store the converted data.*/
+    list_t *external_list = NULL;                                               /* linked list for storing the external variables references.*/
+    instruction_list = bin_translate(parsed_list, symbol_list, &external_list); /*second scan*/
+    if (error() == FALSE)                                                       /*create output files*/
     {
-        strcpy(cat, str);
-        strcat(cat, end);
-        puts(cat);
+        list_to_file(*instruction_list, BASE64_P, ".ob");
+        list_to_file(*external_list, EXTERNAL_T, ".ext");
+        if ((entry_list = create_entry_list(symbol_list))) /*if entry declared, create .ent file*/
+        {
+            list_to_file(*entry_list, ENTRT_P, ".ent");
+            list_free(entry_list, SYMBOL_T); /*free symbol table.*/
+            free(entry_list);
+        }
+        list_free(instruction_list, INT_BIN_T);
+        list_free(external_list, EXTERNAL_T);
+        free(instruction_list);
+        free(external_list);
     }
-    return cat;
 }

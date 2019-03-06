@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "utility.h"
 #include "database.h"
 #include "error.h"
-#define COMMA "," /*comma macro for future use with strtok: geting arguments tokens*/
+#include "scanner.h" /*remove header later on*/
+#define COMMA ","    /*comma macro for future use with strtok: geting arguments tokens*/
 /*the following function removes whitespaces from the given data.*/
 static void remove_wspaces(char **str)
 {
@@ -145,7 +147,7 @@ static char *get_nxt_word(char **src)
     }
     return cmd; /*return cmd address to caller*/
 }
-/*the following function receives a string as argument, then it searches for a sequence of (digit+alpha)^+(space+tab)^+(digit+alpha) (regex)
+/*the following function receives a string as regarded as argument list, then it searches for a sequence of (digit+alpha)^+(space+tab)^+(digit+alpha) (regex)
 if found one, the function returns true, otherwise false.*/
 static int check_missing_comma(char *str)
 {
@@ -170,7 +172,7 @@ the data is analyzed. if the raw string contains no errors (of 5 types listed be
 in which the array elements are the arguments in chronological order (by index) as received from the user.
 the function's arguments are pointer to the raw data string, pointer to an empty char matrix.
 the function returns an error code if encountered any, otherwise stores the arguments in a dynamically allocated array of strings and returns the number of arguments extracted.*/
-static int get_CSV_arg(char **data, char ***arg_mat)
+static int get_CSV_arg(char **data, char ***arg_mat) /*Comma Seperated Values*/
 /*return values:    ILLEGAL_COMMA = Illegal comma
                     CON_COMMA = Multiple consecutive commas
                     EXT_TEXT = Extraneous text after end of command (comma specific)
@@ -240,13 +242,22 @@ static int get_string_arg(char **data, char ***arg_mat)
     }
     return 1; /*return 1 as one string was extracted*/
 }
+/*return pointer to the first non whitespace char in the given string.*/
+static char *first_non_ws(char *str)
+{
+    char *p = str;
+    while ((*p == ' ') || (*p == '\t'))
+        p++;
+    return p;
+}
 /*the following function gets a given string (line from given file), and stores its componenets in the 
-coresponding field in the data structure object.
-the first word is checked, if the last char of the word is ':" then the word stored as a label,otherwise as a cmd.
-the rest of the line, if there is any is stored as the cmd arguments.*/
+coresponding field in the data structure object data_t.
+the function assumes that whitespaces between the label and the colon, and a dot and it'ss associated data type are allowed.
+the rest of the line is  considere considered as the command's arguments*/
 data_t *get_data(char **src)
 {
-    char *cmd = get_nxt_word(src);                      /*get first word.*/
+    char *cmd = get_nxt_word(src); /*get first word.*/
+    char *ptr = NULL;
     data_t *node = (data_t *)calloc(1, sizeof(data_t)); /*allocate new data obj.*/
     if (!cmd)                                           /*check if the line is empty, if so return NULL and free node.*/
     {
@@ -258,19 +269,35 @@ data_t *get_data(char **src)
         printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
         return NULL;
     }
-    if (cmd[strlen(cmd) - 1] == ':') /*check of the first word is a label.*/
+    ptr = first_non_ws(*src);
+    if ((cmd[strlen(cmd) - 1] == ':') || (*ptr == ':')) /*check of the first word is a label.*/
     {
-        node->label = (char *)malloc(strlen(cmd)); /*allocate space in data obj for the given label.*/
+        node->label = (char *)malloc(strlen(cmd) + 1); /*allocate space in data obj for the given label.*/
         if (!node->label)
         {
             printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
             return NULL;
         }
         strncpy(node->label, cmd, strlen(cmd)); /*copy the label into the data obj without the null terminator.*/
-        (node->label)[strlen(cmd) - 1] = 0;     /*terminate at colon.*/
+        if (cmd[strlen(cmd) - 1] == ':')
+            (node->label)[strlen(cmd) - 1] = 0; /*terminate at colon.*/
+        else
+        {
+            (node->label)[strlen(cmd)] = 0; /*terminate at the end of the label*/
+            *src = ptr + 1;                 /*skip colon*/
+        }
         error_hndl(label_check(node->label));
         free(cmd);               /*free allocated space from utility function get_nxt_word.*/
         cmd = get_nxt_word(src); /*get the next word.*/
+    }
+    /*if current word extracted is a dot, possiable data declaration.*/
+    /*find starting address of the next word, if the address is different than the corrent position of *src. than take the cat of them*/
+    if ((!strcmp(cmd, ".")) && ((ptr = first_non_ws(*src)) != *src))
+    {
+        free(cmd);
+        ptr = get_nxt_word(src);    /*get the next word.*/
+        cmd = strcat_new(".", ptr); /*concatenate the desired data type string*/
+        free(ptr);
     }
     if (cmd) /*if there is an unattended word*/
     {

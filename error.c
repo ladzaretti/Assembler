@@ -181,7 +181,7 @@ int identify_line_type(char *cmd)
         return UDEF_CMD;
     if (cmd_id >= 0)
         return CMD_LINE; /*the line is a command.*/
-    return INS_LINE; /*the line must be an instruction.*/
+    return INS_LINE;     /*the line must be an instruction.*/
 }
 /*check if label contains illegal characters or execced allowed length, argument is a string.
 return TRUE if label is valid, otherwise the error code is returned.*/

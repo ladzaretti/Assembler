@@ -5,7 +5,7 @@
 char *path_fname_extract(const char *);
 /*use argv to open a file, argv can contain an extension or not.
 file_name will be asigned with the extensionless file name.*/
-FILE *dy_fopen(const char *, char **);
+FILE *dyn_fopen(const char *, char **);
 /*the following function receives a string representing an integer number.
 using strtod, the string is converted to a double. if the double has a decimal value other then zero, the convertion fails.
 zero is returned. the vessel num doesnt changed.
@@ -52,8 +52,9 @@ list_t *bin_translate(list_t list, list_t symbol_list, list_t **);
 /*create entry list from given symbol table.
 returns the address of the list to the caller. if empty, returns null*/
 list_t *create_entry_list(list_t);
-/*concatenate the given strings into a new string without changing the input.
-input - first argument is the beginning, the second string is the ending.
-return pointer to a new allocated string containing the result.*/
-char *strcat_new(const char *, const char *);
+/*preform the final scan on the given parsed data.
+input:  - linked list containing the parsed user input
+        - a symbol list containing labels
+the function creates the requierd output files to the current directory*/
+void final_scan(list_t, list_t);
 #endif

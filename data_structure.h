@@ -1,10 +1,6 @@
 #ifndef DATA_STRUCT_H
 #define DATA_STRUCT_H
 #include "database.h"
-/*calloc with allocation check.
-first arg - blocks to allocate.
-second arg - block size.*/
-void *ccalloc(unsigned int, unsigned int);
 /*print generic list to stream.
 the type of the node is passed as an enum entry.
 types supported:    - DATA_T = 0
@@ -31,4 +27,9 @@ if the label exists, its node address is return to the caller. otherwise NULL is
 void *search_label(list_t *, char *);
 /*chain given lists.*/
 void chain_lists(list_t *, list_t *);
+/*output given list into file with the given extention.
+input:  - linked list
+        - type of the list
+        - desired extension*/
+void list_to_file(list_t, int, char *);
 #endif
