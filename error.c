@@ -140,7 +140,7 @@ int cmd_identify(char *cmd)
     return -1;
 }
 /*input - cmd strimg, output is the id of the cmd if supported. or -1 otherwise. 
-if the string doesnt start with a dot, the line has an error.*/
+if the string start with a dot, the line may be an instruction or declaration.*/
 int is_cmd(char *cmd)
 {
     int id;
@@ -151,20 +151,30 @@ int is_cmd(char *cmd)
         return UDEF_CMD;
     return POSSIBLE_INS; /* isnt cmd, possibly an ins*/
 }
+/*input - instruction strimg, output is the id of the ins if supported. or -1 otherwise. */
+int is_instruction(char *str)
+{
+    int i = DATA;
+    for (; i <= EXTERN; i++) /*loop thought enum list.*/
+    {
+        if ((strcmp(str, ins_string[i])) == 0) /*compare given string to each and every ins_string entry*/
+            return i;                          /*if ins is supported, its enum ID is returned for future reference.*/
+    }
+    return -1;
+}
 /*this function takes a string as arguments and compares it to a list of values (strings) in ins_string.
 the index of every such string is according to its ID as defined in the enum ins list in database header.
 returns the id or -1 if not supported.*/
 int ins_identify(char *ins)
 {
-    int i = 0;                                                          /*counter used in the for loop.*/
-    symbol_type ins_enum_id;                                            /*variable of type instruction, each and every entry in the given enum is coordinated with the corresponding string in ins_string.*/
-    for (ins_enum_id = DATA; ins_enum_id <= EXTERN; ins_enum_id++, i++) /*loop thought enum list.*/
+    symbol_type ins_enum_id; /*variable of type instruction, each and every entry in the given enum is coordinated with the corresponding string in ins_string.*/
+    if (ins[0] == '.')       /*if strcmp didnt succeed and first char is a dot.the supposed ins is invalid.*/
     {
-        if (!strcmp(ins, ins_string[i])) /*compare given string to each and every ins_string entry*/
-            return ins_enum_id;          /*if ins is supported, its enum ID is returned for future reference.*/
+        if ((strlen(ins) > 1) && ((ins_enum_id = is_instruction(ins + 1)) >= 0)) /*if the string isnt ".", check if the text after the dot is a type of data*/
+            return ins_enum_id;                                                  /*if so, return data id.*/
+        else
+            return UDEF_INS; /*not supported ins*/
     }
-    if (ins[0] == '.') /*if strcmp didnt succeed and first char is a dot.the supposed ins is invalid.*/
-        return UDEF_INS;
     return POSSIBLE_CMD; /*not a ins, possibly a cmd*/
 }
 /*the following function classifys the given line to its type.
@@ -183,6 +193,36 @@ int identify_line_type(char *cmd)
         return CMD_LINE; /*the line is a command.*/
     return INS_LINE;     /*the line must be an instruction.*/
 }
+/*the following function checks if the given string is a register. if so, the id of the register is returned.
+otherwise -1 is returned.*/
+int is_register(char *str)
+{
+    int i = 0;
+    for (; i < REG_NUM; i++)
+    {
+        if ((strcmp(str, registers[i])) == 0)
+            return i;
+    }
+    return -1;
+}
+/*the following function checks if @"s unnary operand is a valid register. input is the command string,
+output is FALSE if usage is invalid. otherwise TRUE.*/
+int check_register(char *str)
+{
+    if ((str[0] == '@') && ((is_register(str + 1)) >= 0)) /*@'s unary operand is a register*/
+        return TRUE;
+    if ((str[0] == '@') && ((is_register(str + 1)) == -1)) /*@"s operand isnt a register*/
+    {
+        error_hndl(INVALID_UNARY_OP);
+        return INVALID_UNARY_OP;
+    }
+    if ((str[0] != '@') && ((is_register(str)) >= 0)) /* use of a register with out @*/
+    {
+        error_hndl(INVALID_REG_USE);
+        return INVALID_REG_USE;
+    }
+    return FALSE; /*otherwise, no @ operator and not a register.*/
+}
 /*check if label contains illegal characters or execced allowed length, argument is a string.
 return TRUE if label is valid, otherwise the error code is returned.*/
 int label_check(char *label)
@@ -190,7 +230,7 @@ int label_check(char *label)
     int i = 0;
     if (!(isalpha(label[0])))
         return FIRST_CHR_NON_ALPHA;
-    if (cmd_identify(label) >= 0)
+    if ((cmd_identify(label) >= 0) || (is_register(label) >= 0) || (is_instruction(label) >= 0))
         return LABEL_RES_WORD;
     if (strlen(label) > LABEL_MAX_LEN)
         return LBL_LONG;
@@ -240,36 +280,6 @@ int check_ln_label(data_t **pdata, char **line_st, int *l_cnt)
         (*pdata)->label = NULL; /*set label ptr to null.*/
     }
     return TRUE; /*line is valid*/
-}
-/*the following function checks if the given string is a register. if so, the id of the register is returned.
-otherwise -1 is returned.*/
-int is_register(char *str)
-{
-    int i = 0;
-    for (; i < REG_NUM; i++)
-    {
-        if ((strcmp(str, registers[i])) == 0)
-            return i;
-    }
-    return -1;
-}
-/*the following function checks if @"s unnary operand is a valid register. input is the command string,
-output is FALSE if usage is invalid. otherwise TRUE.*/
-int check_register(char *str)
-{
-    if ((str[0] == '@') && ((is_register(str + 1)) >= 0)) /*@'s unary operand is a register*/
-        return TRUE;
-    if ((str[0] == '@') && ((is_register(str + 1)) == -1)) /*@"s operand isnt a register*/
-    {
-        error_hndl(INVALID_UNARY_OP);
-        return INVALID_UNARY_OP;
-    }
-    if ((str[0] != '@') && ((is_register(str)) >= 0)) /* use of a register with out @*/
-    {
-        error_hndl(INVALID_REG_USE);
-        return INVALID_REG_USE;
-    }
-    return FALSE; /*otherwise, no @ operator and not a register.*/
 }
 /*the following function checks if the arguments of the given cmd are valid.
 if so, the number of "words" = addresses needed for storage is returned.
@@ -325,7 +335,7 @@ int operand_check(command id, data_t node)
     case (BNE):
     case (RED):
     case (JSR):
-        if (strtod(*arg, &ptr) != 0.0)
+        if (strtod(*arg, &ptr) != 0.0) /*ie the argument is some kind of number.*/
             error_hndl(INVALID_ARGUMENT);
         break;
     /*src hash method = NONE. dec hash method = 1,3,5*/

@@ -7,7 +7,7 @@
 #include "parser.h"
 #include "utility.h"
 /*array of strings of known data types.*/
-const char ins_string[4][8] = {".data", ".string", ".entry", ".extern"};
+const char ins_string[4][8] = {"data", "string", "entry", "extern"};
 /*array of strings with known commands names as defined is the assignment, to be compared using strcmp with input cmd from user.*/
 const char cmd_string[16][5] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
 /*array of the system's registers.*/

@@ -146,7 +146,7 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
             /*assuming that jmp,jsr and bne can operate on code only.*/
             if (((ins_word->op_code == JMP) || (ins_word->op_code == JSR) || (ins_word->op_code == BNE)) && (sym_data->external == FALSE))
             {
-                if ((sym_data->command) == FALSE) /*jmp and jsr can operate on labels that points on instructions*/
+                if ((sym_data->command) == FALSE) /*jmp and jsr and bne can operate on labels that points on instructions*/
                     error_hndl(VAR_AS_CMD);
             }
             else if (((sym_data->command) == TRUE) && (sym_data->external == FALSE))

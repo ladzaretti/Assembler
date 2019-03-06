@@ -65,11 +65,12 @@ char *strcat_new(const char *str, const char *end)
     return cat;
 }
 /*use argv to a open file, argv can contain an extension or not.
-file_name will be asigned with the extensionless file name.*/
+file_name will be asigned with the extensionless file name.
+also, extension is non case sensetive*/
 FILE *dyn_fopen(const char *argv, char **file_name)
 {
     int end_index = strlen(argv);
-    if ((argv[end_index - 3] == '.') && (argv[end_index - 2] == 'A') && (argv[end_index - 1] == 'S'))
+    if ((argv[end_index - 3] == '.') && ((argv[end_index - 2] == 'A') || (argv[end_index - 2] == 'a')) && ((argv[end_index - 1] == 'S') || (argv[end_index - 1] == 's')))
         return fopen(argv, "r");
     else
     {
@@ -85,7 +86,7 @@ FILE *dyn_fopen(const char *argv, char **file_name)
         }
         strcpy(*file_name, argv);
         strcpy(temp, argv);  /*copy without null*/
-        strcat(temp, ".AS"); /*add extension*/
+        strcat(temp, ".as"); /*add extension*/
         fp = fopen(temp, "r");
         free(temp);
         return fp;

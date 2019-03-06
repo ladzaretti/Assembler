@@ -16,7 +16,8 @@ char *strcat_new(const char *, const char *);
 first arg - blocks to allocate.
 second arg - block size.*/
 void *ccalloc(unsigned int, unsigned int);
-/*use argv to open a file, argv can contain an extension or not.
-file_name will be asigned with the extensionless file name.*/
+/*use argv to a open file, argv can contain an extension or not.
+file_name will be asigned with the extensionless file name.
+also, extension is non case sensetive*/
 FILE *dyn_fopen(const char *, char **);
 #endif
