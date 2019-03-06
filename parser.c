@@ -5,7 +5,6 @@
 #include "utility.h"
 #include "database.h"
 #include "error.h"
-#include "scanner.h" /*remove header later on*/
 #define COMMA ","    /*comma macro for future use with strtok: geting arguments tokens*/
 /*the following function removes whitespaces from the given data.*/
 static void remove_wspaces(char **str)

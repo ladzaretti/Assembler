@@ -12,16 +12,21 @@ OBJ= $(SRC:.c=.o)
 TARGET= assembler
 assembler: $(OBJ)
 	$(CC) $(LFLAGS) $^ -o $@
-assembler.o: assembler.c database.h error.h scanner.h data_structure.h
+assembler.o: assembler.c database.h utility.h scanner.h data_structure.h
 	$(CC) $(CFLAGS) $< -o $@
-data_structure.o: data_structure.c database.h
-	$(CC) $(CFLAGS) $< -o $@
-parser.o: parser.c database.h error.h
-	$(CC) $(CFLAGS) $< -o $@
-scanner.o: scanner.c data_structure.h error.h parser.h database.h 
+data_structure.o: data_structure.c database.h utility.h
 	$(CC) $(CFLAGS) $< -o $@
 error.o: error.c database.h
 	$(CC) $(CFLAGS) $< -o $@
+parser.o: parser.c utility.h database.h error.h 
+	$(CC) $(CFLAGS) $< -o $@
+second_scan.o: second_scan.c database.h data_structure.h error.h utility.h  
+	$(CC) $(CFLAGS) $< -o $@
+first_scan.o: first_scan.c database.h data_structure.h error.h parser.h utility.h
+	$(CC) $(CFLAGS) $< -o $@
+utility.o: utility.c
+	$(CC) $(CFLAGS) $< -o $@
+
 #delete executables and object files
 clean:
 	@rm -f *.o *.exe *.ent *.ob *.ext $(TARGET)
