@@ -46,7 +46,7 @@ function input is an adress of pointer to string.
 output 0 - string invalid.
        1 - string is valid.  */
 int check_string(char **);
-/*the following function checks if the given line contains a redundent lable, 
+/*the following function checks if the given line contains a redundent label, 
 i.e label combined with extern or an entry, or label only.
 the line or the label is ignored and freed with accordance to the data given.
 input   - data_t address
@@ -56,6 +56,8 @@ output  - FALSE if line was dropped
         - FRUE if the lines is to be stored.
 */
 int check_ln_label(data_t **, char **, int *);
+/*check if the given string is a reserved machine word*/
+int is_reserved_word(char *);
 /*the following function checks if the given line string is a comment.
 if so, the string is freed from memory and the line counter is increased.
 input   - the address of the line string

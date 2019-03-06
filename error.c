@@ -121,6 +121,12 @@ int error_hndl(error_list err_num)
         case UDEF_REF:
             print_error("undefined reference");
             break;
+        case EXT_AND_ENTRY:
+            print_error("variable is both external and an entry");
+            break;
+        case UNDECLARED_ENTRY:
+            print_error("undeclared entry");
+            break;
         }
     }
     return err_num;
@@ -223,6 +229,14 @@ int check_register(char *str)
     }
     return FALSE; /*otherwise, no @ operator and not a register.*/
 }
+/*check if the given string is a reserved machine word*/
+int is_reserved_word(char *str)
+{
+    if ((cmd_identify(str) >= 0) || (is_register(str) >= 0) || (is_instruction(str) >= 0))
+        return TRUE;
+    else
+        return FALSE;
+}
 /*check if label contains illegal characters or execced allowed length, argument is a string.
 return TRUE if label is valid, otherwise the error code is returned.*/
 int label_check(char *label)
@@ -230,7 +244,7 @@ int label_check(char *label)
     int i = 0;
     if (!(isalpha(label[0])))
         return FIRST_CHR_NON_ALPHA;
-    if ((cmd_identify(label) >= 0) || (is_register(label) >= 0) || (is_instruction(label) >= 0))
+    if (is_reserved_word(label))
         return LABEL_RES_WORD;
     if (strlen(label) > LABEL_MAX_LEN)
         return LBL_LONG;

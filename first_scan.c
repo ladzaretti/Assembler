@@ -85,6 +85,8 @@ symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
             arg = (char **)((data.arg) + i);
             if (search_label(sym_table, *arg))
                 error_hndl(LABEL_EXISTS); /*if found, print error.*/
+            if (is_reserved_word(*arg))
+                error_hndl(LABEL_RES_WORD);
             if (!(psymbol = create_symbol(*arg)))
                 return NULL;                  /*if failed*/
             list_enqueue(sym_table, psymbol); /*insert into symbol table. mark as data*/
@@ -190,7 +192,7 @@ void build_symbol_type(list_t *symbol_list, data_t *pdata)
                     DC += add;
             }
         }
-        if ((id == EXTERN) || (id == ENTRY))
+        if (id == EXTERN)
             insert_symbol(symbol_list, *pdata, id); /*insert into symbol table with extern mark.*/
         break;
     default:
@@ -241,8 +243,16 @@ static void update_symbol_entry(list_t *parsed_list, list_t *symbol_list)
             for (i = 0; i < data->narg; i++) /*cycle thought all arguments in the given entry line.*/
             {
                 symbol_t *sym = search_label(symbol_list, *(arg + i));
+                if (is_reserved_word(*(arg + i)))
+                    error_hndl(LABEL_RES_WORD);
                 if (sym)
+                {
                     sym->entry = TRUE;
+                    if (sym->external == TRUE)
+                        error_hndl(EXT_AND_ENTRY);
+                }
+                else
+                    error_hndl(UNDECLARED_ENTRY);
             }
         }
         if (p->next)
@@ -265,7 +275,7 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
     ln_cnt = 1;           /*reset line counter before new file feed.*/
     IC = STR_ADDRESS;
     DC = 0;
-    reset_error(); /*reset error flag before scanning new input file*/
+    reset_error();                         /*reset error flag before scanning new input file*/
     initilize_list(parsed_list, DATA_T);   /*initialize a linked list*/
     initilize_list(symbol_list, SYMBOL_T); /*initialize a linked list*/
     while (!feof(fp))

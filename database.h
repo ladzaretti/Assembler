@@ -46,7 +46,9 @@ typedef enum
     UNINITILIZED_STRING,      /*uninitilaied .string variable*/
     NON_INT,                  /*given variable is not an integer*/
     CMD_AS_VAR,               /*using a command as cmd argument*/
-    VAR_AS_CMD                /*using a var as cmd argument*/
+    VAR_AS_CMD,               /*using a var as cmd argument*/
+    EXT_AND_ENTRY,            /*both external and an entry*/
+    UNDECLARED_ENTRY          /*undeclared entry*/
 } error_list;
 /*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
 each record is define explicidly to avoid jumps in value.*/
