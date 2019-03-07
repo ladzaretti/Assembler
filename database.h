@@ -37,7 +37,7 @@ typedef enum
     INVALID_ARGUMENT,         /*invalid argument*/
     STR_UNPRINTABLE_CHR,      /*.string contains unprintable char*/
     STR_MISSING_BRACKET,      /*.string type declatation missing bracket*/
-    TOO_FEW_OPERANDS,         /*too many operands for command*/
+    MISSING_OPERANDS,         /*too many operands for command*/
     TOO_MANY_OPERANDS,        /*missing  operands for command*/
     UNS_REG_SRC,              /*register as a source is unsupported*/
     UNS_SRC_HASHING,          /*unsupported source hashing method*/

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "database.h"
+#include "utility.h"
 #define IGNORE_LABEL 1
 #define ACCEPT_LABEL 2
 #define IGNORE_LINE 3
@@ -85,7 +86,7 @@ int error_hndl(error_list err_num)
         case STR_MISSING_BRACKET:
             print_error("missing brackets in string");
             break;
-        case TOO_FEW_OPERANDS:
+        case MISSING_OPERANDS:
             print_error("missing operands for given command");
             break;
         case TOO_MANY_OPERANDS:
@@ -285,7 +286,7 @@ int check_ln_label(data_t **pdata, char **line_st)
         free((*pdata)->label); /*free label string*/
         free(*line_st);        /*free current line string.*/
         free(*pdata);          /*free node*/
-        return FALSE; /*return false as the line is being ignored.*/
+        return FALSE;          /*return false as the line is being ignored.*/
     }
     if (ign_label == IGNORE_LABEL) /*line contains entry/extern and a label.*/
     {
@@ -301,23 +302,31 @@ int operand_check(command id, data_t node)
 {
     char **arg = node.arg;
     char *ptr; /*dummy for strtod*/
-    int cmd_num_op[16] = {2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0};
+    int num;   /*dummy for get_num*/
+    int cmd_num_op[16] = {2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0}; /*array of operands of the coresponding commands (by index)*/
     if (node.narg > cmd_num_op[id])
         return TOO_MANY_OPERANDS;
     if ((node.narg < cmd_num_op[id]) && (node.narg >= 0))
-        return TOO_FEW_OPERANDS;
+        return MISSING_OPERANDS;
     switch (id)
     {
         /*src hash method = 1,3,5. dec hash method = 1,3,5*/
     case (CMP):
+        if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
+            error_hndl(NON_INT);
+        if ((strtod(*(arg + 1), &ptr) != 0.0) && (!get_num(*(arg + 1), &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
+            error_hndl(NON_INT);
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
             return 1;                                               /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
+
         /*src hash method = 1,3,5. dec hash method = 3,5*/
     case (MOV):
     case (ADD):
     case (SUB):
-        if (strtod(*(arg + 1), &ptr) != 0.0) /*check for illegal destination i.e immediate  number*/
+        if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
+            error_hndl(NON_INT);                                   /*src is not an int*/
+        if (strtod(*(arg + 1), &ptr) != 0.0)                       /*check for illegal destination i.e immediate  number*/
             error_hndl(INVALID_ARGUMENT);
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
         {
@@ -332,9 +341,7 @@ int operand_check(command id, data_t node)
         if (strtod(*(arg), &ptr) != 0.0) /*source is a number*/
             error_hndl(INVALID_ARGUMENT);
         if ((is_register(*arg)) >= 0)
-        {
             error_hndl(UNS_REG_SRC);
-        }
         check_register(*(arg + 1));
         if (strtod(*(arg + 1), &ptr) != 0.0) /*check for illegal destination i.e immediate  number*/
             error_hndl(INVALID_ARGUMENT);
@@ -350,9 +357,15 @@ int operand_check(command id, data_t node)
     case (JSR):
         if (strtod(*arg, &ptr) != 0.0) /*ie the argument is some kind of number.*/
             error_hndl(INVALID_ARGUMENT);
+        check_register(*arg);
         break;
     /*src hash method = NONE. dec hash method = 1,3,5*/
     case (PRN):
+        if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
+            error_hndl(NON_INT);                                   /*dest is not an int*/
+        check_register(*arg);
+        break;
+    /*no arguments*/
     case (RTS):
     case (STOP):
         /* code */

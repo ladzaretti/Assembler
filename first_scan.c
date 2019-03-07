@@ -245,6 +245,8 @@ static void update_symbol_entry(list_t *parsed_list, list_t *symbol_list)
             for (i = 0; i < data->narg; i++) /*cycle thought all arguments in the given entry line.*/
             {
                 symbol_t *sym = search_label(symbol_list, *(arg + i));
+                int line_temp = ln_cnt;
+                ln_cnt = data->line; /*get line from node, for correct error display. this function is run after the parsed and symbol lists are built*/
                 if (is_reserved_word(*(arg + i)))
                     error_hndl(LABEL_RES_WORD);
                 if (sym)
@@ -260,6 +262,7 @@ static void update_symbol_entry(list_t *parsed_list, list_t *symbol_list)
                     error_hndl(UNDECLARED_ENTRY);                            /*output error*/
                     ln_cnt = store_line;                                     /*set line counter back to normal.*/
                 }
+                ln_cnt = line_temp; /*set line to normal*/
             }
         }
         if (p->next)
@@ -298,6 +301,9 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
             /*check if the given line label is valid, if ext/ent - label is ignored. if the line has label only the line is ignored.*/
             if ((!check_ln_label(&pdata, &temp)) || ((int)(pdata->narg) < 0)) /*get_CSV in get_data returned an error or label error*/
             {
+                free(pdata->cmd);
+                free(pdata->label);
+                free(pdata);
                 free(temp);
                 ln_cnt++;
                 continue;
