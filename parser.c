@@ -5,7 +5,7 @@
 #include "utility.h"
 #include "database.h"
 #include "error.h"
-#define COMMA ","    /*comma macro for future use with strtok: geting arguments tokens*/
+#define COMMA "," /*comma macro for future use with strtok: geting arguments tokens*/
 /*the following function removes whitespaces from the given data.*/
 static void remove_wspaces(char **str)
 {
@@ -166,6 +166,14 @@ static int check_missing_comma(char *str)
     /*didnt find seq*/
     return FALSE;
 }
+/*return pointer to the first non whitespace char in the given string.*/
+static char *first_non_ws(char *str)
+{
+    char *p = str;
+    while ((*p == ' ') || (*p == '\t'))
+        p++;
+    return p;
+}
 /*the following function receives the raw string containing the arguments got from the user.
 the data is analyzed. if the raw string contains no errors (of 5 types listed below) a array of strings is returned.
 in which the array elements are the arguments in chronological order (by index) as received from the user.
@@ -184,14 +192,15 @@ static int get_CSV_arg(char **data, char ***arg_mat) /*Comma Seperated Values*/
     remove_leading_wspaces(data);
     if (check_missing_comma(*data)) /*check for missing comma.*/
         return MIS_COMMA;
-    if (**data == ',')                            /* check if the first char in the striped string is a comma*/
-        return ILLEGAL_COMMA;                     /*return proper error code*/
-    else if (strstr(*data, ",,"))                 /*search for consecutive of commas*/
-        return CON_COMMA;                         /*if found, return proper code*/
+    if (**data == ',')        /* check if the first char in the striped string is a comma*/
+        return ILLEGAL_COMMA; /*return proper error code*/
+    /*if found, return proper code*/
     else if (*(*data + strlen(*data) - 1) == ',') /*check if the last char is a comma*/
         return EXT_TEXT;                          /*return error code*/
     remove_wspaces(data);                         /*remove white spaces from arguments prior phrasing.*/
-    token = strtok(*data, COMMA);                 /*get first token*/
+    if (strstr(*data, ",,"))                      /*search for consecutive of commas*/
+        return CON_COMMA;
+    token = strtok(*data, COMMA); /*get first token*/
     while (token != NULL)
     {
         i++;
@@ -240,14 +249,6 @@ static int get_string_arg(char **data, char ***arg_mat)
         strcpy(*(*arg_mat), *data);                      /*copy token to newly allocated memory space*/
     }
     return 1; /*return 1 as one string was extracted*/
-}
-/*return pointer to the first non whitespace char in the given string.*/
-static char *first_non_ws(char *str)
-{
-    char *p = str;
-    while ((*p == ' ') || (*p == '\t'))
-        p++;
-    return p;
 }
 /*the following function gets a given string (line from given file), and stores its componenets in the 
 coresponding field in the data structure object data_t.

@@ -101,10 +101,10 @@ int error_hndl(error_list err_num)
             print_error("label already exists");
             break;
         case UNINITILIZED_DATA:
-            print_error("uninitilaied .data variable");
+            print_error("uninitialized .data variable");
             break;
         case UNINITILIZED_STRING:
-            print_error("uninitilaied .string variable");
+            print_error("uninitialized .string variable");
             break;
         case NON_INT:
             print_error("argument is not an integer");
@@ -137,7 +137,7 @@ if the cmd exists, its id is returned, otherwise -1.*/
 int cmd_identify(char *cmd)
 {
     int i = 0;                                                       /*counter used in the for loop.*/
-    command cmd_enum_id;                                             /*variable of type command, each and every entry in the given enum is coordinated with the corresponding string in cmd_string.*/
+    int cmd_enum_id;                                                 /*variable of type command, each and every entry in the given enum is coordinated with the corresponding string in cmd_string.*/
     for (cmd_enum_id = MOV; cmd_enum_id <= STOP; cmd_enum_id++, i++) /*loop thought enum list.*/
     {
         if (!strcmp(cmd, cmd_string[i])) /*compare given string to each and every cmd_string entry*/
@@ -173,8 +173,8 @@ the index of every such string is according to its ID as defined in the enum ins
 returns the id or -1 if not supported.*/
 int ins_identify(char *ins)
 {
-    symbol_type ins_enum_id; /*variable of type instruction, each and every entry in the given enum is coordinated with the corresponding string in ins_string.*/
-    if (ins[0] == '.')       /*if strcmp didnt succeed and first char is a dot.the supposed ins is invalid.*/
+    int ins_enum_id;   /*variable of type instruction, each and every entry in the given enum is coordinated with the corresponding string in ins_string.*/
+    if (ins[0] == '.') /*if strcmp didnt succeed and first char is a dot.the supposed ins is invalid.*/
     {
         if ((strlen(ins) > 1) && ((ins_enum_id = is_instruction(ins + 1)) >= 0)) /*if the string isnt ".", check if the text after the dot is a type of data*/
             return ins_enum_id;                                                  /*if so, return data id.*/
@@ -277,7 +277,7 @@ input   - data_t address
 output  - FALSE if line was dropped
         - FRUE if the lines is to be stored.
 */
-int check_ln_label(data_t **pdata, char **line_st, int *l_cnt)
+int check_ln_label(data_t **pdata, char **line_st)
 {
     int ign_label = ignore_label(**pdata); /*get label status. 1 = line has label only, 2 = ext/ent with label, 0 = label is valid.*/
     if (ign_label == IGNORE_LINE)          /*free current node, as its being ignored. line has label only.*/
@@ -285,7 +285,6 @@ int check_ln_label(data_t **pdata, char **line_st, int *l_cnt)
         free((*pdata)->label); /*free label string*/
         free(*line_st);        /*free current line string.*/
         free(*pdata);          /*free node*/
-        (*l_cnt)++;
         return FALSE; /*return false as the line is being ignored.*/
     }
     if (ign_label == IGNORE_LABEL) /*line contains entry/extern and a label.*/
@@ -371,6 +370,12 @@ int check_string(char **str)
 {
     int i;
     char *p = (char *)malloc(strlen(*str));
+    if (*(*str) == 0)
+    {
+        error_hndl(UNINITILIZED_STRING);
+        free(p);
+        return 0;
+    }
     if (((*(*str) != '\"') || (*(*str + (strlen(*str)) - 1) != '\"')) || ((strlen(*str) == 1) && ((*(*str) == '\"')))) /*check for missing brackets or if the given string is of length 0 and is a bracket*/
     {
         error_hndl(STR_MISSING_BRACKET);

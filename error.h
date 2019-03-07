@@ -55,7 +55,7 @@ input   - data_t address
 output  - FALSE if line was dropped
         - FRUE if the lines is to be stored.
 */
-int check_ln_label(data_t **, char **, int *);
+int check_ln_label(data_t **, char **);
 /*check if the given string is a reserved machine word*/
 int is_reserved_word(char *);
 /*the following function checks if the given line string is a comment.

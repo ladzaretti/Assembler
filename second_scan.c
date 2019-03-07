@@ -235,7 +235,7 @@ list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_
     initilize_list(*external_list, EXTERNAL_T);
     IC = STR_ADDRESS; /*initialize IC and line counter for the second scan.*/
     DC = 0;
-    while ((p) && (!error())) /*loop thought the parced data*/
+    while (p) /*((p) && (!error()))loop thought the parced data*/
     {
         data_t *pdata = (data_t *)p->data;                       /*get parsed data section of the current node.*/
         int ln_type = identify_line_type(pdata->cmd);            /*get line type.*/
@@ -316,9 +316,9 @@ void final_scan(list_t parsed_list, list_t symbol_list)
             list_free(entry_list, SYMBOL_T); /*free symbol table.*/
             free(entry_list);
         }
-        list_free(instruction_list, INT_BIN_T);
-        list_free(external_list, EXTERNAL_T);
-        free(instruction_list);
-        free(external_list);
     }
+    list_free(instruction_list, INT_BIN_T);
+    list_free(external_list, EXTERNAL_T);
+    free(instruction_list);
+    free(external_list);
 }

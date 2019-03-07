@@ -114,10 +114,10 @@ int data_size(data_t data, symbol_type id)
     if (id == DATA)
     {
         char **arg;
-        int num;                 /*in this context, num is a dummy variable for use in get_num.
+        int num;                  /*in this context, num is a dummy variable for use in get_num.
                                 in the second scan, it will contain the interger extracted. */
-        arg = (char **)data.arg; /*cast by pointer to get the data field*/
-        if (!(data.narg))        /*check if arguments exists.*/
+        arg = (char **)data.arg;  /*cast by pointer to get the data field*/
+        if ((int)(data.narg) < 1) /*check if arguments exists.*/
             return UNINITILIZED_DATA;
         for (i = 0; i < data.narg; i++) /*check and count integer arguments.*/
             if (get_num(arg[i], &num))  /*if arg is an integer*/
@@ -132,8 +132,8 @@ int data_size(data_t data, symbol_type id)
     if (id == STRING)
     {
         char **arg;
-        arg = (char **)data.arg; /*cast by pointer to get the data field*/
-        if ((data.narg) > 0)     /*check string for errors*/
+        arg = (char **)data.arg;  /*cast by pointer to get the data field*/
+        if ((int)(data.narg) > 0) /*check string for errors*/
         {
             check_string(arg);
             cnt += strlen(*arg) + 1; /*addvance DC by the length of the given string + null.*/
@@ -190,6 +190,8 @@ void build_symbol_type(list_t *symbol_list, data_t *pdata)
                 int add;
                 if ((add = data_size(*pdata, ins_identify(pdata->cmd))) > 0)
                     DC += add;
+                else
+                    error_hndl(add);
             }
         }
         if (id == EXTERN)
@@ -252,7 +254,12 @@ static void update_symbol_entry(list_t *parsed_list, list_t *symbol_list)
                         error_hndl(EXT_AND_ENTRY);
                 }
                 else
-                    error_hndl(UNDECLARED_ENTRY);
+                {
+                    int store_line = ln_cnt; /*save current line location.*/ /*done for consistency. as ln_cnt will be reset anyway in the next function.*/
+                    ln_cnt = data->line;                                     /*change ln_cnt to the nodes line, so the error will point to the right place.*/
+                    error_hndl(UNDECLARED_ENTRY);                            /*output error*/
+                    ln_cnt = store_line;                                     /*set line counter back to normal.*/
+                }
             }
         }
         if (p->next)
@@ -289,8 +296,12 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
         if ((pdata = get_data(&line))) /*if there is data, i.e the line isn't empty.*/
         {
             /*check if the given line label is valid, if ext/ent - label is ignored. if the line has label only the line is ignored.*/
-            if (!check_ln_label(&pdata, &temp, &ln_cnt))
+            if ((!check_ln_label(&pdata, &temp)) || ((int)(pdata->narg) < 0)) /*get_CSV in get_data returned an error or label error*/
+            {
+                free(temp);
+                ln_cnt++;
                 continue;
+            }
             if (!(strcmp(pdata->cmd, ".extern")) || !(strcmp(pdata->cmd, ".entry")))
                 list_push(parsed_list, (void *)pdata);
             else

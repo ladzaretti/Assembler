@@ -9,9 +9,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/assembler",
-            "args": ["FIle1.AS"],
+            "args": [
+                "errors1.AS"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
+            "miDebuggerPath": "C:/MinGW/bin/gdb.exe",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
