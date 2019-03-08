@@ -78,7 +78,6 @@ FILE *dyn_fopen(const char *argv, char **file_name)
         FILE *fp = NULL;
         temp = (char *)realloc(temp, sizeof(char) * ((strlen(argv)) + 4)); /*extra for extension and null*/
         *file_name = (char *)realloc(*file_name, sizeof(char) * ((strlen(argv)) + 1));
-
         if ((!temp) || (!file_name)) /*check if allocation was successful*/
         {
             printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);

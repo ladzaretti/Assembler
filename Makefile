@@ -38,7 +38,7 @@ file:
 	done
 error:
 	@echo ***running:
-	@for i in `seq 1 4` ; do \
+	@for i in `seq 1 5` ; do \
 		echo ">err$$i-redirection.txt" ; \
 		./$(TARGET) errors$$i>err$$i-redirection.txt ; \
 	done

@@ -24,6 +24,7 @@ int main(int argc, char **argv)
         if (!(fp = dyn_fopen(*argv, &file_name))) /*dynamically open input file (with/without extension)*/
         {
             printf("file <%s> does not exist.\n", file_name);
+            free(file_name);
             return 0;
         }
         initial_scan(&symbol_list, &parsed_list, fp); /*first scan*/

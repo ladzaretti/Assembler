@@ -63,7 +63,9 @@ int fget_line(char **str, FILE *stream)
     {
         if (ch == '@')
             reg_op_flag = TRUE;
-        if (((ch == ' ') || (ch == '\t')) && (leading_ws_flag)) /*skip leading whitespaces.*/
+        if (ch == '\r') /*skip carriage return*/
+            continue;
+        if (((ch == ' ') || (ch == '\t')) && (leading_ws_flag)) /*skip leading whitespaces. skip whitespaces between @ operator and its operand*/
             continue;
         else if (reg_op_flag)
         {
@@ -292,7 +294,7 @@ data_t *get_data(char **src)
     }
     /*if current word extracted is a dot, possible data declaration.*/
     /*find starting address of the next word, if the address is different than the current position of *src. than take the cat of them*/
-    if ((!strcmp(cmd, ".")) && ((ptr = first_non_ws(*src)) != *src))
+    if ((cmd) && (!strcmp(cmd, ".")) && ((ptr = first_non_ws(*src)) != *src))
     {
         free(cmd);
         ptr = get_nxt_word(src);    /*get the next word.*/

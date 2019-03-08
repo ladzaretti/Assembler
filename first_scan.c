@@ -279,7 +279,7 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
     ln_cnt = 1;           /*reset line counter before new file feed.*/
     IC = STR_ADDRESS;
     DC = 0;
-    reset_error();                         /*reset error flag before scanning new input file*/
+    reset_error();                          /*reset error flag before scanning new input file*/
     initialize_list(parsed_list, DATA_T);   /*initialize a linked list*/
     initialize_list(symbol_list, SYMBOL_T); /*initialize a linked list*/
     while (!feof(fp))
@@ -293,12 +293,17 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
         if ((pdata = get_data(&line))) /*if there is data, i.e the line isn't empty.*/
         {
             /*check if the given line label is valid, if ext/ent - label is ignored. if the line has label only the line is ignored.*/
-            if ((!check_ln_label(&pdata, &temp)) || ((int)(pdata->narg) < 0)) /*get_CSV in get_data returned an error or label error*/
+            if ((int)(pdata->narg) < 0) /*get_CSV in get_data returned an error*/
             {
                 free(pdata->cmd);
                 free(pdata->label);
                 free(pdata);
                 free(temp);
+                ln_cnt++;
+                continue;
+            }
+            if (!check_ln_label(&pdata, &temp)) /*label dropped*/
+            {
                 ln_cnt++;
                 continue;
             }

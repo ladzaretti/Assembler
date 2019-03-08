@@ -48,7 +48,7 @@ int error_hndl(error_list err_num)
             print_error("extraneous text after end of command");
             break;
         case ALC_FAILED:
-            printf("Allocation failed, line %d, file %s.\n");
+            printf("Allocation failed.\n");
             break;
         case MIS_COMMA:
             print_error("missing comma");
