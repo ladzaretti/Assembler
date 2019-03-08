@@ -1,6 +1,8 @@
 /*please use LF as an EOL on input files*/
-/*please be advised, the following implemention supports multiply arguments for 
-.extern and .entry declaration. (i.e ".extern/.entry x,y,z" is allowed)*/
+/*please be advised, the following implementation supports multiply arguments for 
+.extern and .entry declaration. (i.e ".extern/.entry x,y,z" is allowed as long they are declared)*/
+/*the entire project is done dynamically. therefore line length or the size or the memory needed are not checked. 
+if the machine's limits are exceeded, the allocations will fail */
 #include <stdio.h>
 #include <stdlib.h>
 #include "database.h"
@@ -19,20 +21,18 @@ int main(int argc, char **argv)
     {
         FILE *fp;
         file_name = path_fname_extract(*argv);
-        if (!(fp = dyn_fopen(*argv, &file_name))) /*dynamicaly open input file (with/without .AS extension)*/
+        if (!(fp = dyn_fopen(*argv, &file_name))) /*dynamically open input file (with/without extension)*/
         {
             printf("file <%s> does not exist.\n", file_name);
             return 0;
         }
         initial_scan(&symbol_list, &parsed_list, fp); /*first scan*/
-        /*fprint_list(stdout, parsed_list, DATA_T);
-        fprint_list(stdout, symbol_list, SYMBOL_T);*/
-        final_scan(parsed_list, symbol_list); /*second scan*/
+        final_scan(parsed_list, symbol_list);         /*second scan*/
         /*free lists*/
         list_free(&symbol_list, SYMBOL_T); /*free symbol table.*/
         list_free(&parsed_list, DATA_T);   /*free the data list*/
         free(file_name);
         fclose(fp);
-    } /*while (*argv) block.*/
+    }
     return 0;
 }

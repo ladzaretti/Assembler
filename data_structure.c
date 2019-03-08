@@ -5,9 +5,9 @@
 #include "database.h"
 #include "utility.h"
 #define WORD_SIZE 12
-/*initilize linked list with NULL.
+/*initialize linked list with NULL.
 input - address of a list.*/
-void initilize_list(list_t *list, unsigned int type)
+void initialize_list(list_t *list, unsigned int type)
 {
     list->type = type;
     list->head = NULL; /*terminate the empty list*/
@@ -56,7 +56,7 @@ static void free_entry(void **node)
 }
 /*the following function gets a pointer to a list. the function frees it. 
 free data node by its type. the function frees the address of a node by a void ptr, gets its type as enum.
-the node is then freed by using the coresponding function with a pointer to it.*/
+the node is then freed by using the corresponding function with a pointer to it.*/
 void list_free(list_t *list, int type)
 {
     void (*fp_free_dt[])(void **) = {&free_dt, &free_sym, &free_bin, &free_entry};
@@ -90,13 +90,13 @@ static void fprint_dt(FILE *stream, void *node)
     }
     fprintf(stream, "__________________________________");
 }
-/*print the binary represention of a given variable of size b_size .
+/*print the binary representation of a given variable of size b_size .
 input the address of the desired variable and its size in bits.*/
 static void fprint_binary(FILE *stream, void *num, int b_size)
 {
     uint64_t mask = 1;
     int i = 0;
-    mask <<= b_size - 1;                /*move first bit to the end of the represention.*/
+    mask <<= b_size - 1;                /*move first bit to the end of the representation.*/
     for (; i < b_size; i++, mask >>= 1) /*print bits*/
         fprintf(stream, "%s", *(uint64_t *)(num)&mask ? "1" : "0");
 }
@@ -138,7 +138,7 @@ static void machine_word_b64print(FILE *stream, void *word)
     unsigned int mask = 077;
     unsigned int MS6bits = *(int *)word;
     MS6bits >>= 6;                                                                /*contains the 6 MSB of the given word.*/
-    fprintf(stream, "%c%c", base64[MS6bits & mask], base64[*(int *)word & mask]); /*print to stream the 12bit represention in base64*/
+    fprintf(stream, "%c%c", base64[MS6bits & mask], base64[*(int *)word & mask]); /*print to stream the 12bit representation in base64*/
 }
 /*print generic list to stream.
 the type of the node is passed as an enum entry.
@@ -251,7 +251,7 @@ void chain_lists(list_t *dest, list_t *src)
     }
     free(src);
 }
-/*output given list into file with the given extention.
+/*output given list into file with the given extension.
 input:  - linked list
         - type of the list
         - desired extension*/

@@ -28,7 +28,7 @@ void reset_error()
     err = FALSE;
 }
 /*the following function receives an error indicator as int and a line specification.
-the error ind is the return value from get_CSV_arg. if the indicator is possitive, the appropriate msg is displayed.*/
+the error ind is the return value from get_CSV_arg. if the indicator is positive, the appropriate msg is displayed.*/
 int error_hndl(error_list err_num)
 {
     if ((err_num >= 0))
@@ -48,7 +48,7 @@ int error_hndl(error_list err_num)
             print_error("extraneous text after end of command");
             break;
         case ALC_FAILED:
-            printf("Allocation failed, line %d, file %s.\n", __LINE__, __FILE__);
+            printf("Allocation failed, line %d, file %s.\n");
             break;
         case MIS_COMMA:
             print_error("missing comma");
@@ -66,10 +66,10 @@ int error_hndl(error_list err_num)
             print_error("reserved word as a label");
             break;
         case LBL_LONG:
-            print_error("labal execceds maximum length");
+            print_error("label exceeds maximum length");
             break;
         case LBL_ILLEGAL_CHAR:
-            print_error("labal contains illegal characters");
+            print_error("label contains illegal characters");
             break;
         case INVALID_REG_USE:
             print_error("invalid register usage, missing unary operator");
@@ -101,10 +101,10 @@ int error_hndl(error_list err_num)
         case LABEL_EXISTS:
             print_error("label already exists");
             break;
-        case UNINITILIZED_DATA:
+        case UNINITIALIZED_DATA:
             print_error("uninitialized .data variable");
             break;
-        case UNINITILIZED_STRING:
+        case UNINITIALIZED_STRING:
             print_error("uninitialized .string variable");
             break;
         case NON_INT:
@@ -133,10 +133,12 @@ int error_hndl(error_list err_num)
     return err_num;
 }
 /*this function takes a string as arguments and compares it to a list of values (strings) in cmd_string.
-the index of every such string is according to its ID as defined in the enum command list in database header.
+the index of every such string is corresponding to it's ID as defined in the enum command list in database header.
 if the cmd exists, its id is returned, otherwise -1.*/
 int cmd_identify(char *cmd)
 {
+    /*array of strings with known commands names as defined is the assignment, to be compared using strcmp with input cmd from user.*/
+    const char cmd_string[16][5] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
     int i = 0;                                                       /*counter used in the for loop.*/
     int cmd_enum_id;                                                 /*variable of type command, each and every entry in the given enum is coordinated with the corresponding string in cmd_string.*/
     for (cmd_enum_id = MOV; cmd_enum_id <= STOP; cmd_enum_id++, i++) /*loop thought enum list.*/
@@ -146,8 +148,8 @@ int cmd_identify(char *cmd)
     }
     return -1;
 }
-/*input - cmd strimg, output is the id of the cmd if supported. or -1 otherwise. 
-if the string start with a dot, the line may be an instruction or declaration.*/
+/*input - cmd strimg, output is the id of the cmd if supported. UDEF_CMD otherwise. 
+if the string start with a dot, the line may be an instruction or a declaration. in this case POSSIBLE_INS is returned.*/
 int is_cmd(char *cmd)
 {
     int id;
@@ -158,10 +160,12 @@ int is_cmd(char *cmd)
         return UDEF_CMD;
     return POSSIBLE_INS; /* isnt cmd, possibly an ins*/
 }
-/*input - instruction strimg, output is the id of the ins if supported. or -1 otherwise. */
-int is_instruction(char *str)
+/*input - instruction string, output is the id of the ins if supported. or -1 otherwise. */
+static int is_instruction(char *str)
 {
     int i = DATA;
+    /*array of strings of known data types.*/
+    const char ins_string[4][8] = {"data", "string", "entry", "extern"};
     for (; i <= EXTERN; i++) /*loop thought enum list.*/
     {
         if ((strcmp(str, ins_string[i])) == 0) /*compare given string to each and every ins_string entry*/
@@ -170,7 +174,7 @@ int is_instruction(char *str)
     return -1;
 }
 /*this function takes a string as arguments and compares it to a list of values (strings) in ins_string.
-the index of every such string is according to its ID as defined in the enum ins list in database header.
+the index of every such string is corresponding to its ID as defined in the enum ins list in database header.
 returns the id or -1 if not supported.*/
 int ins_identify(char *ins)
 {
@@ -184,7 +188,7 @@ int ins_identify(char *ins)
     }
     return POSSIBLE_CMD; /*not a ins, possibly a cmd*/
 }
-/*the following function classifys the given line to its type.
+/*the following function classify the given line to its type.
 input the first word (non label) of a line.
 returns:
 line type, or the proper error code.*/
@@ -204,6 +208,8 @@ int identify_line_type(char *cmd)
 otherwise -1 is returned.*/
 int is_register(char *str)
 {
+    /*array of the system's registers.*/
+    const char registers[8][4] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
     int i = 0;
     for (; i < REG_NUM; i++)
     {
@@ -212,7 +218,7 @@ int is_register(char *str)
     }
     return -1;
 }
-/*the following function checks if @"s unnary operand is a valid register. input is the command string,
+/*the following function checks if @"s unary operand is a valid register. input is the command string,
 output is FALSE if usage is invalid. otherwise TRUE.*/
 int check_register(char *str)
 {
@@ -223,14 +229,14 @@ int check_register(char *str)
         error_hndl(INVALID_UNARY_OP);
         return INVALID_UNARY_OP;
     }
-    if ((str[0] != '@') && ((is_register(str)) >= 0)) /* use of a register with out @*/
+    if ((str[0] != '@') && ((is_register(str)) >= 0)) /* use of a register without @*/
     {
         error_hndl(INVALID_REG_USE);
         return INVALID_REG_USE;
     }
     return FALSE; /*otherwise, no @ operator and not a register.*/
 }
-/*check if the given string is a reserved machine word*/
+/*check if the given string is a reserved machine word, returns TRUE 1 or FALSE 0*/
 int is_reserved_word(char *str)
 {
     if ((cmd_identify(str) >= 0) || (is_register(str) >= 0) || (is_instruction(str) >= 0))
@@ -238,8 +244,8 @@ int is_reserved_word(char *str)
     else
         return FALSE;
 }
-/*check if label contains illegal characters or execced allowed length, argument is a string.
-return TRUE if label is valid, otherwise the error code is returned.*/
+/*check if label contains illegal characters or exceeded allowed length, argument is a string.
+return TRUE 1 if label is valid, otherwise the error code is returned.*/
 int label_check(char *label)
 {
     int i = 0;
@@ -254,7 +260,8 @@ int label_check(char *label)
             return LBL_ILLEGAL_CHAR;
     return TRUE;
 }
-/*input - data_t node, the fucntion displays warnings in case of: node has label only or extern/enrty as a label.*/
+/*input - data_t node, the function displays warnings in case of: node has label only or extern/entry as a label.
+the status is returned to the caller: IGNORE_LINE, IGNORE_LABEL and ACCEPT_LABEL.*/
 int ignore_label(data_t node)
 {
     if ((node.label) && (!node.cmd) && (!node.arg)) /*if the given line has label only, warning is displayed.*/
@@ -269,7 +276,7 @@ int ignore_label(data_t node)
     }
     return ACCEPT_LABEL; /*label is accepted.*/
 }
-/*the following function checks if the given line contains a redundent lable, 
+/*the following function checks if the given line contains a redundant label, 
 i.e label combined with extern or an entry, or label only.
 the line or the label is ignored and freed with accordance to the data given.
 input   - data_t address
@@ -296,13 +303,13 @@ int check_ln_label(data_t **pdata, char **line_st)
     return TRUE; /*line is valid*/
 }
 /*the following function checks if the arguments of the given cmd are valid.
-if so, the number of "words" = addresses needed for storage is returned.
+if so, the number of machine words required = addresses needed for storage is returned.
 in case of failure, error flag is returned.*/
 int operand_check(command id, data_t node)
 {
     char **arg = node.arg;
-    char *ptr; /*dummy for strtod*/
-    int num;   /*dummy for get_num*/
+    char *ptr;                                                             /*dummy for strtod*/
+    int num;                                                               /*dummy for get_num*/
     int cmd_num_op[16] = {2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0}; /*array of operands of the coresponding commands (by index)*/
     if (node.narg > cmd_num_op[id])
         return TOO_MANY_OPERANDS;
@@ -312,9 +319,9 @@ int operand_check(command id, data_t node)
     {
         /*src hash method = 1,3,5. dec hash method = 1,3,5*/
     case (CMP):
-        if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
+        if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*src: strtod converted part of the str to double, bug get_num failed -> not an int*/
             error_hndl(NON_INT);
-        if ((strtod(*(arg + 1), &ptr) != 0.0) && (!get_num(*(arg + 1), &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
+        if ((strtod(*(arg + 1), &ptr) != 0.0) && (!get_num(*(arg + 1), &num))) /*dest: strtod converted part of the str to double, bug get_num failed -> not an int*/
             error_hndl(NON_INT);
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
             return 1;                                               /*return 1 as the needed space in memory, two registers in one machine "word".*/
@@ -329,9 +336,7 @@ int operand_check(command id, data_t node)
         if (strtod(*(arg + 1), &ptr) != 0.0)                       /*check for illegal destination i.e immediate  number*/
             error_hndl(INVALID_ARGUMENT);
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
-        {
-            return 1;
-        } /*return 1 as the needed space in memory, two registers in one machine "word".*/
+            return 1;                                               /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
         /*src hash method = 3. dec hash method = 3,5*/
     case (LEA):
@@ -340,7 +345,7 @@ int operand_check(command id, data_t node)
             error_hndl(UNS_SRC_HASHING);
         if (strtod(*(arg), &ptr) != 0.0) /*source is a number*/
             error_hndl(INVALID_ARGUMENT);
-        if ((is_register(*arg)) >= 0)
+        if (((*arg[0] == '@') && (strlen(*arg) > 1) && (is_register(*arg + 1)) >= 0) || (is_register(*arg) >= 0)) /*src is a register with or without @*/
             error_hndl(UNS_REG_SRC);
         check_register(*(arg + 1));
         if (strtod(*(arg + 1), &ptr) != 0.0) /*check for illegal destination i.e immediate  number*/
@@ -375,8 +380,8 @@ int operand_check(command id, data_t node)
     }
     return cmd_num_op[id];
 }
-/*the following function checks if the given .string is valid. if so, the sorrounding brackets are removed.
-function input is an adress of pointer to string.
+/*the following function checks if the given .string is valid. if so, the surrounding brackets are removed.
+function input is a string.
 output 0 - string invalid.
        1 - string is valid.  */
 int check_string(char **str)
@@ -385,7 +390,7 @@ int check_string(char **str)
     char *p = (char *)malloc(strlen(*str));
     if (*(*str) == 0)
     {
-        error_hndl(UNINITILIZED_STRING);
+        error_hndl(UNINITIALIZED_STRING);
         free(p);
         return 0;
     }

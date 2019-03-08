@@ -21,13 +21,13 @@ if successful, the address of the node is returned, else NULL is returned.*/
 node_t *list_enqueue(list_t *, void *);
 /*initilize linked list with NULL.
 input - address of a list.*/
-void initilize_list(list_t *, unsigned int);
+void initialize_list(list_t *, unsigned int);
 /*this function receives a pointer to a list and a label to search in the given list.
 if the label exists, its node address is return to the caller. otherwise NULL is returned.*/
 void *search_label(list_t *, char *);
 /*chain given lists.*/
 void chain_lists(list_t *, list_t *);
-/*output given list into file with the given extention.
+/*output given list into file with the given extension.
 input:  - linked list
         - type of the list
         - desired extension*/

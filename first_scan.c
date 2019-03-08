@@ -6,12 +6,6 @@
 #include "error.h"
 #include "parser.h"
 #include "utility.h"
-/*array of strings of known data types.*/
-const char ins_string[4][8] = {"data", "string", "entry", "extern"};
-/*array of strings with known commands names as defined is the assignment, to be compared using strcmp with input cmd from user.*/
-const char cmd_string[16][5] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
-/*array of the system's registers.*/
-const char registers[8][4] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
 /*the following function creates a symbol node with the given label.
 input is a label string, the function then returns to the caller the address of the dynamically allocated node.
 the node is initialized to 0 in all other fields.*/
@@ -43,7 +37,7 @@ symbol_t *create_symbol(char *label)
 inputs  - symbol table address represented by a linked list
         - data_t node by value.
         - symbol_type as the "word" type.
-if successfull, new node address is return. if not null is returned.*/
+if successful, new node address is return. if not null is returned.*/
 symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
 {
     symbol_t *psymbol = NULL; /*new symbol node.*/
@@ -106,7 +100,7 @@ symbol_t *insert_symbol(list_t *sym_table, data_t data, symbol_type type)
 input : - data_t as the data extracted from the current line.
         - symbol_type enum that describes the given data type -> .data/.string
 return values are:  - size in memory
-                    - UNINITILIZED_DATA, NON_INT or UNINITILIZED_STRING on error*/
+                    - UNINITIALIZED_DATA, NON_INT or UNINITIALIZED_STRING on error*/
 int data_size(data_t data, symbol_type id)
 {
     int i;
@@ -115,10 +109,10 @@ int data_size(data_t data, symbol_type id)
     {
         char **arg;
         int num;                  /*in this context, num is a dummy variable for use in get_num.
-                                in the second scan, it will contain the interger extracted. */
+                                in the second scan, it will contain the integer extracted. */
         arg = (char **)data.arg;  /*cast by pointer to get the data field*/
         if ((int)(data.narg) < 1) /*check if arguments exists.*/
-            return UNINITILIZED_DATA;
+            return UNINITIALIZED_DATA;
         for (i = 0; i < data.narg; i++) /*check and count integer arguments.*/
             if (get_num(arg[i], &num))  /*if arg is an integer*/
                 cnt++;
@@ -136,15 +130,15 @@ int data_size(data_t data, symbol_type id)
         if ((int)(data.narg) > 0) /*check string for errors*/
         {
             check_string(arg);
-            cnt += strlen(*arg) + 1; /*addvance DC by the length of the given string + null.*/
+            cnt += strlen(*arg) + 1; /*advance DC by the length of the given string + null.*/
         }
         else
-            return UNINITILIZED_STRING;
+            return UNINITIALIZED_STRING;
     }
     return cnt;
 }
 /*the following function builds a symbol entry by the given data.
-the data is analyezed for its type -> instruction or command line.
+the data is analyzed for its type -> instruction or command line.
 then checked for errors, or if exists in the table. 
 if the given data is valid, insert_symbol is used to enqueue with the corresponding parameters.
 input:  - the address of the symbol list
@@ -153,7 +147,7 @@ output = none*/
 void build_symbol_type(list_t *symbol_list, data_t *pdata)
 {
     /*the following switch cases will be executed only if there is a valid cmd/ins line. 
-                        otherwise defualt case will be executed.*/
+                        otherwise default case will be executed.*/
     if (symbol_list->type != SYMBOL_T)
     {
         printf("[%s] wrong list type\n", "build_symbol_type"); /*__func__/__FUNCTION__ not supported in C90*/
@@ -286,8 +280,8 @@ void initial_scan(list_t *symbol_list, list_t *parsed_list, FILE *fp)
     IC = STR_ADDRESS;
     DC = 0;
     reset_error();                         /*reset error flag before scanning new input file*/
-    initilize_list(parsed_list, DATA_T);   /*initialize a linked list*/
-    initilize_list(symbol_list, SYMBOL_T); /*initialize a linked list*/
+    initialize_list(parsed_list, DATA_T);   /*initialize a linked list*/
+    initialize_list(symbol_list, SYMBOL_T); /*initialize a linked list*/
     while (!feof(fp))
     {
         char *temp = NULL;              /*pointer the beginning of given line. for future free.*/

@@ -65,8 +65,8 @@ char *strcat_new(const char *str, const char *end)
     return cat;
 }
 /*use argv to a open file, argv can contain an extension or not.
-file_name will be asigned with the extensionless file name.
-also, extension is non case sensetive*/
+file_name will be assigned with the extension-less file name.
+also, extension is non case sensitive*/
 FILE *dyn_fopen(const char *argv, char **file_name)
 {
     int end_index = strlen(argv);
@@ -93,7 +93,7 @@ FILE *dyn_fopen(const char *argv, char **file_name)
     }
 }
 /*the following function receives a string representing an integer number.
-using strtod, the string is converted to a double. if the double has a decimal value other then zero, the convertion fails.
+using strtod, the string is converted to a double. if the double has a decimal value other then zero, the conversion fails.
 zero is returned. the vessel num doesnt changed.
 if successful, TRUE is return and num gets the whole part of the double.*/
 int get_num(char *src, int *num)
@@ -105,7 +105,7 @@ int get_num(char *src, int *num)
         return FALSE;
     else
     {
-        *num = temp; /*the whole src string is an interger.*/
+        *num = temp; /*the whole src string is an integer.*/
         return TRUE; /*if the whole str converted to double, return true, as the given input is indeed a real number.*/
     }
 }

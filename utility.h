@@ -2,7 +2,7 @@
 #define UTILITY_H
 #include <stdio.h>
 /*the following function receives a string representing an integer number.
-using strtod, the string is converted to a double. if the double has a decimal value other then zero, the convertion fails.
+using strtod, the string is converted to a double. if the double has a decimal value other then zero, the conversion fails.
 zero is returned. the vessel num doesnt changed.
 if successful, 1 is return and num gets the whole part of the double.*/
 int get_num(char *, int *);
@@ -17,7 +17,7 @@ first arg - blocks to allocate.
 second arg - block size.*/
 void *ccalloc(unsigned int, unsigned int);
 /*use argv to a open file, argv can contain an extension or not.
-file_name will be asigned with the extensionless file name.
-also, extension is non case sensetive*/
+file_name will be assigned with the extension-less file name.
+also, extension is non case sensitive*/
 FILE *dyn_fopen(const char *, char **);
 #endif

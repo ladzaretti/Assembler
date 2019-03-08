@@ -10,9 +10,6 @@
 #define REG_NUM 8 /*number of registers*/
 #define LABEL_MAX_LEN 31
 #define STR_ADDRESS 100
-extern const char cmd_string[16][5];
-extern const char ins_string[4][8];
-extern const char registers[8][4];
 extern char *file_name;
 extern int ln_cnt; /*read line counter.*/
 extern int IC;
@@ -36,22 +33,22 @@ typedef enum
     INVALID_UNARY_OP,         /*invalid @ unary operator's operand*/
     INVALID_ARGUMENT,         /*invalid argument*/
     STR_UNPRINTABLE_CHR,      /*.string contains unprintable char*/
-    STR_MISSING_BRACKET,      /*.string type declatation missing bracket*/
+    STR_MISSING_BRACKET,      /*.string type declaration missing bracket*/
     MISSING_OPERANDS,         /*too many operands for command*/
     TOO_MANY_OPERANDS,        /*missing  operands for command*/
     UNS_REG_SRC,              /*register as a source is unsupported*/
     UNS_SRC_HASHING,          /*unsupported source hashing method*/
     LABEL_EXISTS,             /*label already exists*/
-    UNINITILIZED_DATA,        /*uninitilaied .data variable*/
-    UNINITILIZED_STRING,      /*uninitilaied .string variable*/
+    UNINITIALIZED_DATA,        /*uninitialized .data variable*/
+    UNINITIALIZED_STRING,      /*uninitialized .string variable*/
     NON_INT,                  /*given variable is not an integer*/
     CMD_AS_VAR,               /*using a command as cmd argument*/
     VAR_AS_CMD,               /*using a var as cmd argument*/
     EXT_AND_ENTRY,            /*both external and an entry*/
     UNDECLARED_ENTRY          /*undeclared entry*/
 } error_list;
-/*enum contaning all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in err_check.c.
-each record is define explicidly to avoid jumps in value.*/
+/*enum containing all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in error.c.
+each record is define explicitly to avoid jumps in value.*/
 typedef enum
 {
     MOV = 0,
@@ -78,16 +75,16 @@ typedef enum
     STRING = 1,
     ENTRY = 2,
     EXTERN = 3,
-    COM = 4
+    COM = 4 /*extra id for a line contains a command*/
 } symbol_type;
-/*list of differant linked list data types.*/
+/*list of different linked list data types.*/
 enum node_type
 {
     DATA_T = 0,
     SYMBOL_T = 1,
     INT_BIN_T = 2,
     EXTERNAL_T = 3,
-    ENTRT_P = 4, /*for printing purposes. in actuallity is of type symbol_t*/
+    ENTRT_P = 4, /*for printing purposes. in actuality is of type symbol_t*/
     BASE64_P = 5 /*not an actual node, for printing purposes only*/
 };
 /*struct to store parsed line*/
@@ -112,7 +109,7 @@ typedef struct symbol
     unsigned int external : 1;
     unsigned int entry : 1;
 } symbol_t;
-/*generic double linked list, data fields are changable.*/
+/*generic double linked list, data fields are changeable.*/
 typedef struct node *ptr;
 typedef struct node
 {

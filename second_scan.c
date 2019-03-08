@@ -34,7 +34,7 @@ typedef enum
 } bin_type;
 typedef enum
 {
-    HASH_1 = 1, /*ןmmediate*/
+    HASH_1 = 1, /*immediate*/
     HASH_3 = 3, /*direct*/
     HASH_5 = 5  /*reg*/
 } hash_method;
@@ -44,7 +44,7 @@ typedef enum
     LINK_R = 2,
     LINK_E = 1
 } linkage_type;
-/*the following function receives a node and inserts its represention into the data list as int.
+/*the following function receives a node and inserts its representation into the data list as int.
 input:  - address of the linked list
         - address of a data node*/
 static void insert_data_block(list_t *bin_data_list, data_t *pdata)
@@ -60,11 +60,11 @@ static void insert_data_block(list_t *bin_data_list, data_t *pdata)
     }
     if (dat_type == DATA)
     {
-        /*unfoled and insert into data list*/
+        /*unfolded and insert into data list*/
         for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
         {
             int_node = ccalloc(1, sizeof(int));
-            get_num(*(arg + i), int_node);         /*get int represention.*/
+            get_num(*(arg + i), int_node);         /*get int representation.*/
             list_enqueue(bin_data_list, int_node); /*enqueue into data section*/
             DC++;
         }
@@ -133,14 +133,14 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
         printf("[%s] wrong list type\n", "build_instruction_block"); /*__func__/__FUNCTION__ not supported in C90*/
         return NULL;
     }
-    initilize_list(bin_ins_block, INT_BIN_T);
+    initialize_list(bin_ins_block, INT_BIN_T);
     /*create bin_ins, code op id*/
     ins_word->op_code = cmd_identify(pdata->cmd);  /*set op code*/
     list_enqueue(bin_ins_block, (void *)ins_word); /*enqueue instruction*/
     IC++;
     for (i = 0; i < pdata->narg; i++) /*cycle thought all arguments in the given entry line.*/
     {
-        if ((sym_data = search_label(symbol_list, *(arg + i)))) /*get symbol node for the currecnt label*/
+        if ((sym_data = search_label(symbol_list, *(arg + i)))) /*get symbol node for the current label*/
         {
             /*if label is external, linker will deal with combination errors. as we have no info on the type of the label.*/
             /*assuming that jmp,jsr and bne can operate on code only.*/
@@ -216,7 +216,7 @@ static list_t *build_instruction_block(list_t *symbol_list, list_t *external_lis
     }
     return bin_ins_block;
 }
-/*create the binary represention of the given parsed list and the symbol table.
+/*create the binary representation of the given parsed list and the symbol table.
 assumed that the input data contains no errors from the initial scan.
 if encountered, update external variable list.*/
 list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_list)
@@ -230,12 +230,12 @@ list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_
         printf("[%s] wrong list type\n", "bin_translate"); /*__func__/__FUNCTION__ not supported in C90*/
         return NULL;
     }
-    initilize_list(bin_data_list, INT_BIN_T);
-    initilize_list(bin_ins_list, INT_BIN_T);
-    initilize_list(*external_list, EXTERNAL_T);
+    initialize_list(bin_data_list, INT_BIN_T);
+    initialize_list(bin_ins_list, INT_BIN_T);
+    initialize_list(*external_list, EXTERNAL_T);
     IC = STR_ADDRESS; /*initialize IC and line counter for the second scan.*/
     DC = 0;
-    while (p) /*((p) && (!error()))loop thought the parced data*/
+    while (p) /*((p) && (!error()))loop thought the parseded data*/
     {
         data_t *pdata = (data_t *)p->data;                       /*get parsed data section of the current node.*/
         int ln_type = identify_line_type(pdata->cmd);            /*get line type.*/
@@ -251,11 +251,11 @@ list_t *bin_translate(list_t parsed_list, list_t symbol_list, list_t **external_
         ln_cnt++;    /*inc line counter.*/
     }
     chain_lists(bin_ins_list, bin_data_list); /*chain data section to the end of the instruction section*/
-    return bin_ins_list;                      /*return proccessed data.*/
+    return bin_ins_list;                      /*return processed data.*/
 }
 /*create entry list from given symbol table*/
 list_t *create_entry_list(list_t list)
-{                          /*function is created to avoid printing new line in the end of the correspoding file.
+{                          /*function is created to avoid printing new line in the end of the corresponding file.
 if the symbol table to be scanned, and then print only entries with entry flag, the generic printing function will print many extra new lines.
 basicly, all this trouble is to avoid printing extra \n in the end the output files.*/
     node_t *p = list.head; /*get symbol list head*/
@@ -276,7 +276,7 @@ basicly, all this trouble is to avoid printing extra \n in the end the output fi
             symbol_t *new_pdata = ccalloc(1, sizeof(symbol_t));
             if (new_pdata)
             {
-                has_entry = TRUE;                                                           /*set flag as true. entry list will contain atleast one node.*/
+                has_entry = TRUE;                                                           /*set flag as true. entry list will contain at least one node.*/
                 new_pdata->label = (char *)ccalloc(strlen(pdata->label) + 1, sizeof(char)); /*copy org node to entry, copying to avoid sharing nodes between list. otherwise, freeing the lists will be tricky.*/
                 strcpy(new_pdata->label, pdata->label);
                 new_pdata->address = pdata->address;
@@ -296,7 +296,7 @@ basicly, all this trouble is to avoid printing extra \n in the end the output fi
 /*preform the final scan on the given parsed data.
 input:  - linked list containing the parsed user input
         - a symbol list containing labels
-the function creates the requierd output files to the current directory*/
+the function creates the required output files to the current directory*/
 void final_scan(list_t parsed_list, list_t symbol_list)
 {
     list_t *entry_list = NULL;

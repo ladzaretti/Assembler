@@ -100,7 +100,7 @@ int fget_line(char **str, FILE *stream)
 }
 /*the following function receives a pointer to a string as argument.
 the function returns pointer to the extracted first word in the given string.
-if the given data contains no data, an empty string will be returned ("/n")*/
+if the given data contains no data, an empty string will be returned ("")*/
 static char *get_nxt_word(char **src)
 {
     char *temp = NULL, *cmd = NULL;                               /*temp will be used to get the allocated address. cmd will be returned from the function.*/
@@ -179,7 +179,7 @@ the data is analyzed. if the raw string contains no errors (of 5 types listed be
 in which the array elements are the arguments in chronological order (by index) as received from the user.
 the function's arguments are pointer to the raw data string, pointer to an empty char matrix.
 the function returns an error code if encountered any, otherwise stores the arguments in a dynamically allocated array of strings and returns the number of arguments extracted.*/
-static int get_CSV_arg(char **data, char ***arg_mat) /*Comma Seperated Values*/
+static int get_CSV_arg(char **data, char ***arg_mat) /*Comma Separated Values*/
 /*return values:    ILLEGAL_COMMA = Illegal comma
                     CON_COMMA = Multiple consecutive commas
                     EXT_TEXT = Extraneous text after end of command (comma specific)
@@ -250,10 +250,10 @@ static int get_string_arg(char **data, char ***arg_mat)
     }
     return 1; /*return 1 as one string was extracted*/
 }
-/*the following function gets a given string (line from given file), and stores its componenets in the 
-coresponding field in the data structure object data_t.
-the function assumes that whitespaces between the label and the colon, and a dot and it'ss associated data type are allowed.
-the rest of the line is  considere considered as the command's arguments*/
+/*the following function gets a given string (line from given file), and stores its components in the 
+corresponding field in the data structure object data_t.
+the function assumes that whitespaces between the label and the colon, and a dot and it's associated data type are allowed.
+the rest of the line is considered as the command's arguments*/
 data_t *get_data(char **src)
 {
     char *cmd = get_nxt_word(src); /*get first word.*/
@@ -290,8 +290,8 @@ data_t *get_data(char **src)
         free(cmd);               /*free allocated space from utility function get_nxt_word.*/
         cmd = get_nxt_word(src); /*get the next word.*/
     }
-    /*if current word extracted is a dot, possiable data declaration.*/
-    /*find starting address of the next word, if the address is different than the corrent position of *src. than take the cat of them*/
+    /*if current word extracted is a dot, possible data declaration.*/
+    /*find starting address of the next word, if the address is different than the current position of *src. than take the cat of them*/
     if ((!strcmp(cmd, ".")) && ((ptr = first_non_ws(*src)) != *src))
     {
         free(cmd);
