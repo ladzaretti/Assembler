@@ -62,4 +62,6 @@ input   - the address of the line string
 output  - TRUE if the given line is a comment
         - FALSE otherwise.*/
 int is_comment(char **, int *);
+/*check if the given number is representable in two complement representation in given number of bits*/
+void is_representable_int(int, int);
 #endif

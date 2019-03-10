@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include "database.h"
 #include "utility.h"
 #define IGNORE_LABEL 1
@@ -127,6 +128,12 @@ int error_hndl(error_list err_num)
             break;
         case UNDECLARED_ENTRY:
             print_error("undeclared entry");
+            break;
+        case INT_TOO_BIG:
+            print_error("given number is too big");
+            break;
+        case INT_TOO_SMALL:
+            print_error("given number is too small");
             break;
         }
     }
@@ -302,6 +309,14 @@ int check_ln_label(data_t **pdata, char **line_st)
     }
     return TRUE; /*line is valid*/
 }
+/*check if the given number is representable in two complement representation in given number of bits*/
+void is_representable_int(int num, int bits)
+{
+    if (num > (int)(pow(2, bits - 1) - 1))
+        error_hndl(INT_TOO_BIG);
+    if (num < (int)(-1 * pow(2, bits - 1)))
+        error_hndl(INT_TOO_SMALL);
+}
 /*the following function checks if the arguments of the given cmd are valid.
 if so, the number of machine words required = addresses needed for storage is returned.
 in case of failure, error flag is returned.*/
@@ -321,8 +336,12 @@ int operand_check(command id, data_t node)
     case (CMP):
         if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*src: strtod converted part of the str to double, bug get_num failed -> not an int*/
             error_hndl(NON_INT);
+        if (get_num(*arg, &num))
+            is_representable_int(num, BITS);                                   /*check if representable in 10 bits*/
         if ((strtod(*(arg + 1), &ptr) != 0.0) && (!get_num(*(arg + 1), &num))) /*dest: strtod converted part of the str to double, bug get_num failed -> not an int*/
             error_hndl(NON_INT);
+        if (get_num(*(arg + 1), &num))
+            is_representable_int(num, BITS);                        /*check if representable in 10 bits*/
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
             return 1;                                               /*return 1 as the needed space in memory, two registers in one machine "word".*/
         break;
@@ -333,7 +352,9 @@ int operand_check(command id, data_t node)
     case (SUB):
         if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
             error_hndl(NON_INT);                                   /*src is not an int*/
-        if (strtod(*(arg + 1), &ptr) != 0.0)                       /*check for illegal destination i.e immediate  number*/
+        if (get_num(*arg, &num))
+            is_representable_int(num, BITS); /*check if representable in 10 bits*/
+        if (strtod(*(arg + 1), &ptr) != 0.0) /*check for illegal destination i.e immediate  number*/
             error_hndl(INVALID_ARGUMENT);
         if ((check_register(*arg)) && (check_register(*(arg + 1)))) /*check if both of the arguments are registers.*/
             return 1;                                               /*return 1 as the needed space in memory, two registers in one machine "word".*/
@@ -368,6 +389,8 @@ int operand_check(command id, data_t node)
     case (PRN):
         if ((strtod(*arg, &ptr) != 0.0) && (!get_num(*arg, &num))) /*strtod converted part of the str to double, bug get_num failed -> not an int*/
             error_hndl(NON_INT);                                   /*dest is not an int*/
+        if (get_num(*arg, &num))
+            is_representable_int(num, BITS); /*check if representable in 10 bits*/
         check_register(*arg);
         break;
     /*no arguments*/

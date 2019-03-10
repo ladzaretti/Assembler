@@ -10,6 +10,7 @@
 #define REG_NUM 8 /*number of registers*/
 #define LABEL_MAX_LEN 31
 #define STR_ADDRESS 100
+#define BITS 10
 extern char *file_name;
 extern int ln_cnt; /*read line counter.*/
 extern int IC;
@@ -39,13 +40,15 @@ typedef enum
     UNS_REG_SRC,              /*register as a source is unsupported*/
     UNS_SRC_HASHING,          /*unsupported source hashing method*/
     LABEL_EXISTS,             /*label already exists*/
-    UNINITIALIZED_DATA,        /*uninitialized .data variable*/
-    UNINITIALIZED_STRING,      /*uninitialized .string variable*/
+    UNINITIALIZED_DATA,       /*uninitialized .data variable*/
+    UNINITIALIZED_STRING,     /*uninitialized .string variable*/
     NON_INT,                  /*given variable is not an integer*/
     CMD_AS_VAR,               /*using a command as cmd argument*/
     VAR_AS_CMD,               /*using a var as cmd argument*/
     EXT_AND_ENTRY,            /*both external and an entry*/
-    UNDECLARED_ENTRY          /*undeclared entry*/
+    UNDECLARED_ENTRY,         /*undeclared entry*/
+    INT_TOO_BIG,              /*given int is too big*/
+    INT_TOO_SMALL             /*given int is too small*/
 } error_list;
 /*enum containing all the call names for the known commands. ordered is consistent to the array of cmd names (cmd_string) defined in error.c.
 each record is define explicitly to avoid jumps in value.*/

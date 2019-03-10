@@ -115,7 +115,10 @@ int data_size(data_t data, symbol_type id)
             return UNINITIALIZED_DATA;
         for (i = 0; i < data.narg; i++) /*check and count integer arguments.*/
             if (get_num(arg[i], &num))  /*if arg is an integer*/
+            {
+                is_representable_int(num, BITS); /*check if representable in 10 bits*/
                 cnt++;
+            }
             /*if valid, inc DC.*/
             else
             {

@@ -1,4 +1,3 @@
-/*please use LF as an EOL on input files*/
 /*please be advised, the following implementation supports multiply arguments for 
 .extern and .entry declaration. (i.e ".extern/.entry x,y,z" is allowed as long they are declared)*/
 /*the entire project is done dynamically. therefore line length or the size or the memory needed are not checked. 
@@ -15,7 +14,7 @@ int DC = 0;             /*data counter.*/
 int IC = STR_ADDRESS;   /*instruction counter.*/
 int main(int argc, char **argv)
 {
-    list_t parsed_list; /* linked list to contain the prased data.*/
+    list_t parsed_list; /* linked list to contain the parsed data.*/
     list_t symbol_list; /* linked list to contain the the symbol table.*/
     while (*++argv)
     {

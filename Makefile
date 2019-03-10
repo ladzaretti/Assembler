@@ -11,13 +11,13 @@ OBJ= $(SRC:.c=.o)
 #desired executable file name
 TARGET= assembler
 assembler: $(OBJ)
-	$(CC) $(LFLAGS) $^ -o $@
+	$(CC) $(LFLAGS) $^ -o $@ -lm
 assembler.o: assembler.c database.h utility.h scanner.h data_structure.h
 	$(CC) $(CFLAGS) $< -o $@
 data_structure.o: data_structure.c database.h utility.h
 	$(CC) $(CFLAGS) $< -o $@
 error.o: error.c database.h utility.h
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ -lm
 parser.o: parser.c utility.h database.h error.h 
 	$(CC) $(CFLAGS) $< -o $@
 second_scan.o: second_scan.c database.h data_structure.h error.h utility.h  
@@ -33,8 +33,7 @@ clean:
 file:
 	@echo ***running:
 	@for i in `seq 1 6` ; do \
-		echo ">file$$i-redirection.txt" ; \
-		./$(TARGET) file$$i>file$$i-redirection.txt ; \
+		./$(TARGET) file$$i ; \
 	done
 error:
 	@echo ***running:

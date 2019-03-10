@@ -264,7 +264,7 @@ void list_to_file(list_t list, int type, char *extention)
         file_with_ext = strcat_new(file_name, extention);
         if (!file_with_ext)
             return;
-        puts(file_with_ext);            /*print new file name to stdout*/
+        /*puts(file_with_ext);            print new file name to stdout*/
         fp = fopen(file_with_ext, "w"); /*open file*/
         if (type == BASE64_P)
             fprintf(fp, "%d %d\n", IC - STR_ADDRESS, DC);
