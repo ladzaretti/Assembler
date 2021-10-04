@@ -24,7 +24,7 @@ int main(int argc, char **argv)
         {
             printf("file <%s> does not exist.\n", file_name);
             free(file_name);
-            return 0;
+            continue;
         }
         initial_scan(&symbol_list, &parsed_list, fp); /*first scan*/
         final_scan(parsed_list, symbol_list);         /*second scan*/
